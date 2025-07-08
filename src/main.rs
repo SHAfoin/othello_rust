@@ -111,19 +111,24 @@ impl Board {
         match self.can_play(row, col, color) {
             Ok(directions) => {
                 self.set_cell(row, col, color);
+                let mut flipped_count = 0;
                 for direction in directions {
-                    self.flip_discs(row, col, color, direction);
+                    flipped_count += self.flip_discs(row, col, color, direction);
                 }
+
+                // Update disc counts
+                let index = match color {
+                    Cell::Black => 0,
+                    Cell::White => 1,
+                    _ => return Err("Invalid color".to_string()),
+                };
+                let opponent_index = 1 - index;
+
+                self.nb_discs[index] += 1 + flipped_count; // New disc + flipped discs
+                self.nb_discs[opponent_index] -= flipped_count; // Remove flipped discs from opponent
             }
             Err(e) => return Err(e),
         }
-
-        let index = match color {
-            Cell::Black => 0,
-            Cell::White => 1,
-            _ => return Err("Invalid color".to_string()),
-        };
-        self.nb_discs[index] += 1;
 
         Ok(())
     }
@@ -186,14 +191,25 @@ impl Board {
         }
     }
 
-    fn flip_discs(&mut self, row: usize, col: usize, color: Cell, direction: (isize, isize)) {
+    fn flip_discs(
+        &mut self,
+        row: usize,
+        col: usize,
+        color: Cell,
+        direction: (isize, isize),
+    ) -> usize {
         let mut next_row = row as isize + direction.0;
         let mut next_col = col as isize + direction.1;
+        let mut flipped_count = 0;
+
         while self.get_cell(next_row as usize, next_col as usize) != Ok(color) {
             self.set_cell(next_row as usize, next_col as usize, color);
+            flipped_count += 1;
             next_row += direction.0;
             next_col += direction.1;
         }
+
+        flipped_count
     }
 
     fn has_legal_moves(&self, color: Cell) -> Option<usize> {
@@ -340,9 +356,9 @@ mod tests {
     #[test]
     fn get_cell_out_of_bounds() {
         let board = Board::new();
-        assert!(board.get_cell(SIZE, 0).is_ok());
-        assert!(board.get_cell(0, SIZE).is_ok());
-        assert!(board.get_cell(SIZE, SIZE).is_ok());
+        assert!(board.get_cell(SIZE, 0).is_err());
+        assert!(board.get_cell(0, SIZE).is_err());
+        assert!(board.get_cell(SIZE, SIZE).is_err());
     }
 
     #[test]
@@ -373,5 +389,135 @@ mod tests {
 
         assert!(board.try_play_move(0, 0, Cell::Black).is_err());
         assert!(board.try_play_move(3, 3, Cell::Black).is_err());
+    }
+
+    #[test]
+    fn test_get_nb_discs() {
+        let board = Board::new();
+        assert_eq!(board.get_nb_discs(Cell::Black), Ok(2));
+        assert_eq!(board.get_nb_discs(Cell::White), Ok(2));
+        assert!(board.get_nb_discs(Cell::Empty).is_err());
+    }
+
+    #[test]
+    fn test_get_nb_discs_after_move() {
+        let mut board = Board::new();
+        board.try_play_move(2, 3, Cell::Black).unwrap();
+        assert_eq!(board.get_nb_discs(Cell::Black), Ok(4)); // 2 initial + 1 new + 1 flipped
+        assert_eq!(board.get_nb_discs(Cell::White), Ok(1)); // 2 initial - 1 flipped
+    }
+
+    #[test]
+    fn test_has_legal_moves() {
+        let board = Board::new();
+        assert!(board.has_legal_moves(Cell::Black).is_some());
+        assert!(board.has_legal_moves(Cell::White).is_some());
+
+        let moves_black = board.has_legal_moves(Cell::Black).unwrap();
+        let moves_white = board.has_legal_moves(Cell::White).unwrap();
+        assert_eq!(moves_black, 4); // 4 coups légaux initiaux pour noir
+        assert_eq!(moves_white, 4); // 4 coups légaux initiaux pour blanc
+    }
+
+    #[test]
+    fn test_input_to_coordinates() {
+        assert_eq!(Board::input_to_coordinates("3D"), Some((3, 3)));
+        assert_eq!(Board::input_to_coordinates("0A"), Some((0, 0)));
+        assert_eq!(Board::input_to_coordinates("7H"), Some((7, 7)));
+        assert_eq!(Board::input_to_coordinates("2d"), Some((2, 3))); // lowercase should work
+
+        // Invalid inputs
+        assert_eq!(Board::input_to_coordinates(""), None);
+        assert_eq!(Board::input_to_coordinates("3"), None);
+        assert_eq!(Board::input_to_coordinates("3DD"), None);
+        assert_eq!(Board::input_to_coordinates("9A"), None); // Out of bounds row
+        assert_eq!(Board::input_to_coordinates("0I"), None); // Out of bounds column
+        assert_eq!(Board::input_to_coordinates("XY"), None); // Invalid format
+    }
+
+    #[test]
+    fn test_can_play() {
+        let board = Board::new();
+
+        // Valid moves for Black at start
+        assert!(board.can_play(2, 3, Cell::Black).is_ok());
+        assert!(board.can_play(3, 2, Cell::Black).is_ok());
+        assert!(board.can_play(4, 5, Cell::Black).is_ok());
+        assert!(board.can_play(5, 4, Cell::Black).is_ok());
+
+        // Invalid moves
+        assert!(board.can_play(0, 0, Cell::Black).is_err());
+        assert!(board.can_play(3, 3, Cell::Black).is_err()); // Occupied cell
+        assert!(board.can_play(8, 8, Cell::Black).is_err()); // Out of bounds
+        assert!(board.can_play(2, 3, Cell::Empty).is_err()); // Invalid color
+    }
+
+    #[test]
+    fn test_get_valid_directions() {
+        let board = Board::new();
+        let directions = board.get_valid_directions(2, 3, Cell::Black);
+        assert_eq!(directions.len(), 1);
+        assert_eq!(directions[0], (1, 0)); // Should be able to go down
+
+        let directions = board.get_valid_directions(3, 2, Cell::Black);
+        assert_eq!(directions.len(), 1);
+        assert_eq!(directions[0], (0, 1)); // Should be able to go right
+    }
+
+    #[test]
+    fn test_flip_discs() {
+        let mut board = Board::new();
+
+        // Play a move and verify flipping
+        board.try_play_move(2, 3, Cell::Black).unwrap();
+        assert_eq!(board.get_cell(2, 3), Ok(Cell::Black)); // New piece
+        assert_eq!(board.get_cell(3, 3), Ok(Cell::Black)); // Flipped piece
+        assert_eq!(board.get_cell(4, 3), Ok(Cell::Black)); // Original piece
+    }
+
+    #[test]
+    fn test_is_move_valid_recursive() {
+        let board = Board::new();
+
+        // Test a valid move
+        assert!(board.is_move_valid_recursive(2, 3, Cell::Black, 1, (1, 0)));
+
+        // Test an invalid move (out of bounds)
+        assert!(!board.is_move_valid_recursive(0, 0, Cell::Black, 1, (-1, 0)));
+
+        // Test invalid move (same color adjacent)
+        assert!(!board.is_move_valid_recursive(3, 3, Cell::White, 1, (1, 0)));
+    }
+    #[test]
+    fn test_multiple_moves_game() {
+        let mut board = Board::new();
+
+        // Play a sequence of moves
+        assert!(board.try_play_move(2, 3, Cell::Black).is_ok());
+        assert!(board.try_play_move(2, 2, Cell::White).is_ok());
+        assert!(board.try_play_move(3, 2, Cell::Black).is_ok());
+
+        // Verify the board state
+        assert_eq!(board.get_cell(2, 3), Ok(Cell::Black));
+        assert_eq!(board.get_cell(2, 2), Ok(Cell::White));
+        assert_eq!(board.get_cell(3, 2), Ok(Cell::Black));
+    }
+
+    #[test]
+    fn test_no_legal_moves_scenario() {
+        let mut board = Board::new();
+
+        // Create a scenario where a player has no legal moves
+        // This is a simplified test - in a real game this would be more complex
+        for row in 0..SIZE {
+            for col in 0..SIZE {
+                if board.get_cell(row, col) == Ok(Cell::Empty) {
+                    board.set_cell(row, col, Cell::Black);
+                }
+            }
+        }
+
+        // White should have no legal moves
+        assert_eq!(board.has_legal_moves(Cell::White), None);
     }
 }
