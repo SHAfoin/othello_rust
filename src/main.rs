@@ -107,7 +107,7 @@ impl Board {
         &self.cells
     }
 
-    pub fn play_turn(&mut self, row: usize, col: usize, color: Cell) -> Result<(), String> {
+    pub fn try_play_move(&mut self, row: usize, col: usize, color: Cell) -> Result<(), String> {
         match self.can_play(row, col, color) {
             Ok(directions) => {
                 self.set_cell(row, col, color);
@@ -246,32 +246,21 @@ impl fmt::Display for Board {
     }
 }
 
-fn main() {
-    let mut board = Board::new();
-    let mut input = String::new();
-    let mut player_turn = Cell::Black;
-    let mut success = false;
-    println!("Welcome to Othello!\n");
-    println!("================");
-
+fn get_player_move(player_turn: Cell) -> Option<(usize, usize)> {
     loop {
-        success = false;
-        if let Some(nb_moves) = board.has_legal_moves(player_turn) {
-            while !success {
-                println!("{}", board);
+        println!(
+            "{} : Enter your move (row and column, e.g., '3D'): ",
+            player_turn
+        );
 
-                println!(
-                    "{} : Enter your move (row and column, e.g., '3D'): ",
-                    player_turn
-                );
-                input.clear();
-                std::io::stdin()
-                    .read_line(&mut input)
-                    .expect("Failed to read line");
+        let mut input = String::new();
+        match std::io::stdin().read_line(&mut input) {
+            Ok(_) => {
                 let input = input.trim();
+
                 if input == "exit" {
                     println!("Exiting the game.");
-                    return;
+                    std::process::exit(0);
                 } else if input == "help" {
                     println!("Available commands:");
                     println!("  - Enter your move in 'rowColumn' format (e.g., '3D').");
@@ -279,26 +268,60 @@ fn main() {
                     continue;
                 }
 
-                if let Some((row, col)) = Board::input_to_coordinates(input) {
-                    if let Err(e) = board.play_turn(row, col, player_turn) {
-                        println!("Error : {}", e);
-                    } else {
-                        println!("Move played successfully.");
-                        success = true;
-                    }
-                } else {
-                    println!("Invalid input format. Please use 'rowColumn' format (e.g., '3D').");
+                match Board::input_to_coordinates(input) {
+                    Some(coords) => return Some(coords),
+                    None => println!(
+                        "Invalid input format. Please use 'rowColumn' format (e.g., '3D')."
+                    ),
                 }
             }
-        } else {
-            println!("{} : No legal moves available.", player_turn);
-            break; // No legal moves, skip to next player's turn
+            Err(e) => {
+                println!("Error reading input: {}", e);
+                continue;
+            }
         }
+    }
+}
+
+fn play_turn_human(board: &mut Board, player_turn: Cell) {
+    if let Some(nb_moves) = board.has_legal_moves(player_turn) {
+        board.set_nb_legal_moves(player_turn, nb_moves).unwrap();
+
+        loop {
+            println!("{}", board);
+
+            if let Some((row, col)) = get_player_move(player_turn) {
+                match board.try_play_move(row, col, player_turn) {
+                    Ok(_) => {
+                        println!("Move played successfully.");
+                        break; // Sort de la boucle d'input
+                    }
+                    Err(e) => {
+                        println!("Error: {}", e);
+                        // Continue la boucle pour redemander l'input
+                    }
+                }
+            }
+        }
+    } else {
+        println!("{} : No legal moves available.", player_turn);
+    }
+}
+
+fn main() {
+    let mut board = Board::new();
+    let mut player_turn = Cell::Black;
+
+    println!("Welcome to Othello!\n");
+    println!("================");
+
+    loop {
+        play_turn_human(&mut board, player_turn);
 
         player_turn = match player_turn {
             Cell::Black => Cell::White,
             Cell::White => Cell::Black,
-            _ => player_turn, // Should not happen
+            _ => player_turn,
         };
 
         println!("\n================");
@@ -315,7 +338,7 @@ mod tests {
     }
 
     #[test]
-    fn get_out_of_bounds() {
+    fn get_cell_out_of_bounds() {
         let board = Board::new();
         assert!(board.get_cell(SIZE, 0).is_ok());
         assert!(board.get_cell(0, SIZE).is_ok());
@@ -334,10 +357,10 @@ mod tests {
     }
 
     #[test]
-    fn play_turn_valid_move() {
+    fn try_play_move_turn_valid_move() {
         let mut board = Board::new();
         // Black should be able to play at (2, 3)
-        assert!(board.play_turn(2, 3, Cell::Black).is_ok());
+        assert!(board.try_play_move(2, 3, Cell::Black).is_ok());
         // Verify the cell was set to Black
         assert_eq!(board.get_cell(2, 3), Ok(Cell::Black));
         // Verify the White disc at (3, 3) was flipped to Black
@@ -345,11 +368,10 @@ mod tests {
     }
 
     #[test]
-    fn play_turn_invalid_move() {
+    fn try_play_move_turn_invalid_move() {
         let mut board = Board::new();
-        // Should not be able to play at (0, 0) - no valid directions
-        assert!(board.play_turn(0, 0, Cell::Black).is_err());
-        // Should not be able to play on an occupied cell
-        assert!(board.play_turn(3, 3, Cell::Black).is_err());
+
+        assert!(board.try_play_move(0, 0, Cell::Black).is_err());
+        assert!(board.try_play_move(3, 3, Cell::Black).is_err());
     }
 }
