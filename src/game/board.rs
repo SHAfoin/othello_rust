@@ -7,6 +7,7 @@ pub struct Board {
     cells: [[Cell; SIZE]; SIZE],
     nb_discs: [usize; 2],
     nb_legal_moves: [Option<usize>; 2],
+    turn_number: usize,
 }
 
 impl Board {
@@ -24,6 +25,7 @@ impl Board {
             cells,
             nb_discs: [2, 2],
             nb_legal_moves: [None, None],
+            turn_number: 1,
         }
     }
 
@@ -39,7 +41,11 @@ impl Board {
         self.cells[row][col] = cell;
     }
 
-    fn get_nb_legal_moves(&mut self, color: Cell) -> Result<Option<usize>, String> {
+    pub fn get_turn_number(&self) -> usize {
+        self.turn_number
+    }
+
+    pub fn get_nb_legal_moves(&self, color: Cell) -> Result<Option<usize>, String> {
         let index = match color {
             Cell::Black => 0,
             Cell::White => 1,
