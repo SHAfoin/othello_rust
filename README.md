@@ -43,3 +43,7 @@ You can run the tests with :
 ```bash
   cargo test
 ```
+
+## TODO
+
+- [ ] Add Cargo docs
