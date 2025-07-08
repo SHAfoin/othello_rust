@@ -1,3 +1,21 @@
+//  ===================================================================
+//
+//  ███████╗██╗  ██╗ █████╗         ███████╗ ██████╗ ██╗███╗   ██╗
+//  ██╔════╝██║  ██║██╔══██╗        ██╔════╝██╔═══██╗██║████╗  ██║
+//  ███████╗███████║███████║        █████╗  ██║   ██║██║██╔██╗ ██║
+//  ╚════██║██╔══██║██╔══██║        ██╔══╝  ██║   ██║██║██║╚██╗██║
+//  ███████║██║  ██║██║  ██║███████╗██║     ╚██████╔╝██║██║ ╚████║
+//  ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝      ╚═════╝ ╚═╝╚═╝  ╚═══╝
+//
+//  @file : src\main.rs
+//  @description : Othello game implementation in Rust.
+//  @author : SALTEL Baptiste
+//  @date : 08/07/2025
+//  @version : 1.0
+//  @license : none
+//
+//  ===================================================================
+
 use std::fmt;
 
 const SIZE: usize = 8;
@@ -24,6 +42,7 @@ impl fmt::Display for Cell {
 struct Board {
     cells: [[Cell; SIZE]; SIZE],
     nb_discs: [usize; 2],
+    nb_legal_moves: [Option<usize>; 2],
 }
 
 impl Board {
@@ -40,14 +59,15 @@ impl Board {
         Board {
             cells,
             nb_discs: [2, 2],
+            nb_legal_moves: [None, None],
         }
     }
 
-    pub fn get_cell(&self, row: usize, col: usize) -> Option<Cell> {
+    pub fn get_cell(&self, row: usize, col: usize) -> Result<Cell, String> {
         if row < SIZE && col < SIZE {
-            Some(self.cells[row][col])
+            Ok(self.cells[row][col])
         } else {
-            None
+            Err("Index out of bounds".to_string())
         }
     }
 
@@ -55,11 +75,31 @@ impl Board {
         self.cells[row][col] = cell;
     }
 
-    pub fn get_nb_discs(&self, color: Cell) -> usize {
+    fn get_nb_legal_moves(&mut self, color: Cell) -> Result<Option<usize>, String> {
+        let index = match color {
+            Cell::Black => 0,
+            Cell::White => 1,
+            _ => return Err("Invalid color".to_string()),
+        };
+
+        Ok(self.nb_legal_moves[index])
+    }
+
+    fn set_nb_legal_moves(&mut self, color: Cell, nb_moves: usize) -> Result<(), String> {
+        let index = match color {
+            Cell::Black => 0,
+            Cell::White => 1,
+            _ => return Err("Invalid color".to_string()),
+        };
+        self.nb_legal_moves[index] = Some(nb_moves);
+        Ok(())
+    }
+
+    pub fn get_nb_discs(&self, color: Cell) -> Result<usize, String> {
         match color {
-            Cell::Black => self.nb_discs[0],
-            Cell::White => self.nb_discs[1],
-            _ => 0,
+            Cell::Black => Ok(self.nb_discs[0]),
+            Cell::White => Ok(self.nb_discs[1]),
+            _ => Err("Invalid color".to_string()),
         }
     }
 
@@ -135,11 +175,11 @@ impl Board {
         let next_col = col + direction.1 * index;
         if next_row < 0 || next_row >= SIZE as isize || next_col < 0 || next_col >= SIZE as isize {
             return false; // Out of bounds
-        } else if index == 1 && self.get_cell(next_row as usize, next_col as usize) == Some(color) {
+        } else if index == 1 && self.get_cell(next_row as usize, next_col as usize) == Ok(color) {
             return false; // Found the same color right next to the move in the direction
-        } else if self.get_cell(next_row as usize, next_col as usize) == Some(color) {
-            return true; // Found a cell of the same color after some other color
-        } else if self.get_cell(next_row as usize, next_col as usize) == Some(Cell::Empty) {
+        } else if self.get_cell(next_row as usize, next_col as usize) == Ok(color) {
+            return true; // Found a cell of the same color after Ok other color
+        } else if self.get_cell(next_row as usize, next_col as usize) == Ok(Cell::Empty) {
             return false; // Found an empty cell
         } else {
             return self.is_move_valid_recursive(row, col, color, index + 1, direction);
@@ -149,7 +189,7 @@ impl Board {
     fn flip_discs(&mut self, row: usize, col: usize, color: Cell, direction: (isize, isize)) {
         let mut next_row = row as isize + direction.0;
         let mut next_col = col as isize + direction.1;
-        while self.get_cell(next_row as usize, next_col as usize) != Some(color) {
+        while self.get_cell(next_row as usize, next_col as usize) != Ok(color) {
             self.set_cell(next_row as usize, next_col as usize, color);
             next_row += direction.0;
             next_col += direction.1;
@@ -277,20 +317,20 @@ mod tests {
     #[test]
     fn get_out_of_bounds() {
         let board = Board::new();
-        assert!(board.get_cell(SIZE, 0).is_none());
-        assert!(board.get_cell(0, SIZE).is_none());
-        assert!(board.get_cell(SIZE, SIZE).is_none());
+        assert!(board.get_cell(SIZE, 0).is_ok());
+        assert!(board.get_cell(0, SIZE).is_ok());
+        assert!(board.get_cell(SIZE, SIZE).is_ok());
     }
 
     #[test]
     fn get_cell() {
         let board = Board::new();
-        assert_eq!(board.get_cell(0, 0), Some(Cell::Empty));
-        assert_eq!(board.get_cell(3, 3), Some(Cell::White));
-        assert_eq!(board.get_cell(3, 4), Some(Cell::Black));
-        assert_eq!(board.get_cell(4, 3), Some(Cell::Black));
-        assert_eq!(board.get_cell(4, 4), Some(Cell::White));
-        assert_eq!(board.get_cell(7, 7), Some(Cell::Empty));
+        assert_eq!(board.get_cell(0, 0), Ok(Cell::Empty));
+        assert_eq!(board.get_cell(3, 3), Ok(Cell::White));
+        assert_eq!(board.get_cell(3, 4), Ok(Cell::Black));
+        assert_eq!(board.get_cell(4, 3), Ok(Cell::Black));
+        assert_eq!(board.get_cell(4, 4), Ok(Cell::White));
+        assert_eq!(board.get_cell(7, 7), Ok(Cell::Empty));
     }
 
     #[test]
@@ -299,9 +339,9 @@ mod tests {
         // Black should be able to play at (2, 3)
         assert!(board.play_turn(2, 3, Cell::Black).is_ok());
         // Verify the cell was set to Black
-        assert_eq!(board.get_cell(2, 3), Some(Cell::Black));
+        assert_eq!(board.get_cell(2, 3), Ok(Cell::Black));
         // Verify the White disc at (3, 3) was flipped to Black
-        assert_eq!(board.get_cell(3, 3), Some(Cell::Black));
+        assert_eq!(board.get_cell(3, 3), Ok(Cell::Black));
     }
 
     #[test]
