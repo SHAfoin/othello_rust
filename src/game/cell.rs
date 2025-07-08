@@ -7,6 +7,16 @@ pub enum Cell {
     White = 2,
 }
 
+impl Cell {
+    pub fn get_opponent(self) -> Cell {
+        match self {
+            Cell::Black => Cell::White,
+            Cell::White => Cell::Black,
+            Cell::Empty => Cell::Empty,
+        }
+    }
+}
+
 impl fmt::Display for Cell {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let symbol = match self {
