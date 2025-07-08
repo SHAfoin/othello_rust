@@ -16,9 +16,9 @@
 //
 //  ===================================================================
 
+mod ai;
 mod game;
-use game::board::Board;
-use game::cell::Cell;
+use game::{board::Board, cell::Cell};
 
 fn get_player_move(player_turn: Cell) -> Option<(usize, usize)> {
     loop {
@@ -60,6 +60,11 @@ fn get_player_move(player_turn: Cell) -> Option<(usize, usize)> {
 fn play_turn_human(board: &mut Board, player_turn: Cell) {
     if let Some(nb_moves) = board.has_legal_moves(player_turn) {
         board.set_nb_legal_moves(player_turn, nb_moves).unwrap();
+        if let Some(nb_moves_opponent) = board.has_legal_moves(player_turn.get_opponent()) {
+            board
+                .set_nb_legal_moves(player_turn.get_opponent(), nb_moves_opponent)
+                .unwrap();
+        }
 
         loop {
             println!("{}", board);
@@ -92,11 +97,7 @@ fn main() {
     loop {
         play_turn_human(&mut board, player_turn);
 
-        player_turn = match player_turn {
-            Cell::Black => Cell::White,
-            Cell::White => Cell::Black,
-            _ => player_turn,
-        };
+        player_turn = player_turn.get_opponent();
 
         println!("\n================");
     }
