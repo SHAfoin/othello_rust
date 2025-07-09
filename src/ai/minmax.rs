@@ -1,7 +1,10 @@
 use std::{thread, vec};
 
 use crate::{
-    ai::common::{Action, HeuristicType},
+    ai::{
+        common::{Action, HeuristicType},
+        consts::{MAX_DEPTH, ULTRA_THREADING},
+    },
     game::{board::Board, cell::Cell, consts::SIZE},
 };
 
@@ -105,6 +108,34 @@ impl AIMinMax {
                 .heuristic
                 .evaluate(board, self.get_color(), self.matrix);
             return score;
+        } else if depth == MAX_DEPTH && ULTRA_THREADING {
+            let mut handles = vec![];
+            for case in board.has_legal_moves(player_color).unwrap() {
+                let mut new_board = board.clone();
+                match new_board.try_play_move(case.0, case.1, player_color) {
+                    Ok(_) => {
+                        let ai_cloned = self.clone();
+                        let handle =
+                            thread::spawn(move || ai_cloned.tree_step(&new_board, depth - 1));
+                        handles.push(handle);
+                    }
+                    Err(e) => {
+                        println!("Error: {}", e);
+                    }
+                }
+            }
+
+            for handle in handles {
+                match handle.join() {
+                    Ok(score) => {
+                        best_score = comparation_function(best_score, score);
+                    }
+                    Err(_) => {
+                        println!("Thread panicked");
+                    }
+                }
+            }
+            best_score
         } else {
             for case in board.has_legal_moves(player_color).unwrap() {
                 let mut new_board = board.clone();

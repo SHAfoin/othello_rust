@@ -1,4 +1,5 @@
-pub const MAX_DEPTH: usize = 5; // Maximum depth for the AI search algorithms
+pub const MAX_DEPTH: usize = 6; // Maximum depth for the AI search algorithms
+pub const ULTRA_THREADING: bool = false; // Enable or disable ultra threading for AI calculations
 
 pub const MATRIX_A: [[isize; 8]; 8] = [
     [100, -20, 10, 5, 5, 10, -20, 100],
