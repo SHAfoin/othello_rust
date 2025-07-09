@@ -22,15 +22,14 @@ mod game;
 mod human;
 
 use crate::{
-    ai::{alphabeta::AIAlphaBeta, common::HeuristicType, minmax::AIMinMax},
+    ai::{alphabeta::AIAlphaBeta, common::HeuristicType, minmax::AIMinMax, qlearning::QLearning},
     consts::MAX_DEPTH,
     game::{board::Board, cell::Cell},
     human::Human,
 };
 
-fn main() {
+pub fn start_game() {
     let mut board = Board::new();
-
     // let player1 = Human::new(Cell::Black);
     let player1 = AIAlphaBeta::new(
         MAX_DEPTH,               // Depth of the search tree
@@ -45,9 +44,6 @@ fn main() {
         Cell::White,
         None,
     );
-
-    println!("Welcome to Othello!\n");
-    println!("================\n");
 
     while !board.is_game_over() {
         println!("{}", board);
@@ -88,4 +84,16 @@ fn main() {
     } else {
         println!("It's a draw!");
     }
+}
+
+fn main() {
+    println!("Welcome to Othello!\n");
+    println!("================\n");
+    // start_game();
+    let mut q = QLearning::new(
+        1000,                  // Maximum number of steps
+        HeuristicType::Global, // Heuristic type to use
+        10000,                 // Number of epochs
+    );
+    q.try_q_learning();
 }

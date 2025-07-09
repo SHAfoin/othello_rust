@@ -12,6 +12,7 @@ pub enum HeuristicType {
     Matrix,
     Mobility,
     Mixte,
+    Global,
 }
 
 impl HeuristicType {
@@ -26,6 +27,12 @@ impl HeuristicType {
             HeuristicType::Matrix => heuristic_matrix(board, player, &matrix.unwrap()),
             HeuristicType::Mobility => heuristic_mobility(board, player),
             HeuristicType::Mixte => heuristic_mixte(board, player, &matrix.unwrap()),
+            HeuristicType::Global => {
+                // Global heuristic combines all heuristics
+                heuristic_absolute(board, player)
+                    + heuristic_matrix(board, player, &matrix.unwrap())
+                    + heuristic_mobility(board, player)
+            }
         }
     }
 }

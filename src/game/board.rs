@@ -130,7 +130,6 @@ impl Board {
                 self.set_nb_legal_moves(color.get_opponent(), opponent_moves)
                     .unwrap();
 
-                self.next_turn();
                 Ok(flipped_count + 1)
             }
             Err(e) => return Err(e),
@@ -250,6 +249,19 @@ impl Board {
         }
     }
 
+    pub fn get_winner(&self) -> Option<Cell> {
+        let black_count = self.get_nb_discs(Cell::Black).unwrap();
+        let white_count = self.get_nb_discs(Cell::White).unwrap();
+
+        if black_count > white_count {
+            Some(Cell::Black)
+        } else if white_count > black_count {
+            Some(Cell::White)
+        } else {
+            None
+        }
+    }
+
     pub fn coordinates_to_input(row: usize, col: usize) -> String {
         if row < SIZE && col < SIZE {
             format!("{}{}", row, (col as u8 + b'A') as char)
@@ -260,6 +272,11 @@ impl Board {
 
     pub fn to_hash(&self) -> String {
         let mut hash = String::new();
+        match self.get_player_turn() {
+            Cell::Black => hash.push('B'),
+            Cell::White => hash.push('W'),
+            _ => hash.push('E'), // Empty or invalid
+        }
         for row in self.cells.iter() {
             for cell in row.iter() {
                 hash.push(match cell {
