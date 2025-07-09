@@ -30,7 +30,6 @@ use crate::{
 
 fn main() {
     let mut board = Board::new();
-    let mut player_turn = Cell::Black;
 
     // let player1 = Human::new(Cell::Black);
     let player1 = AIAlphaBeta::new(
@@ -53,7 +52,7 @@ fn main() {
     while !board.is_game_over() {
         println!("{}", board);
 
-        match player_turn {
+        match board.get_player_turn() {
             Cell::Black => player1.play_turn(&mut board),
             Cell::White => player2.play_turn(&mut board),
             _ => unreachable!(),
@@ -67,12 +66,20 @@ fn main() {
             board.get_nb_discs(Cell::White).unwrap(),
         );
 
-        player_turn = player_turn.get_opponent();
-
         println!("\n================\n");
     }
 
     println!("\nGame over!\n");
+
+    println!("{}", board);
+
+    println!(
+        "Current leaderboard: {} {} discs, {} {} discs",
+        Cell::Black,
+        board.get_nb_discs(Cell::Black).unwrap(),
+        Cell::White,
+        board.get_nb_discs(Cell::White).unwrap(),
+    );
 
     if board.get_nb_discs(Cell::Black).unwrap() > board.get_nb_discs(Cell::White).unwrap() {
         println!("{} wins!", Cell::Black);

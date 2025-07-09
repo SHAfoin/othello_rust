@@ -9,6 +9,7 @@ pub struct Board {
     nb_discs: [usize; 2],
     nb_legal_moves: [Option<usize>; 2],
     turn_number: usize,
+    player_turn: Cell,
 }
 
 impl Board {
@@ -27,6 +28,7 @@ impl Board {
             nb_discs: [2, 2],
             nb_legal_moves: [Some(4), Some(4)], // Initial legal moves for both players
             turn_number: 1,
+            player_turn: Cell::Black, // Black starts first
         }
     }
 
@@ -36,6 +38,15 @@ impl Board {
         } else {
             Err("Index out of bounds".to_string())
         }
+    }
+
+    pub fn get_player_turn(&self) -> Cell {
+        self.player_turn
+    }
+
+    pub fn next_turn(&mut self) {
+        self.turn_number += 1;
+        self.player_turn = self.player_turn.get_opponent();
     }
 
     pub fn set_cell(&mut self, row: usize, col: usize, cell: Cell) {
@@ -119,6 +130,7 @@ impl Board {
                 self.set_nb_legal_moves(color.get_opponent(), opponent_moves)
                     .unwrap();
 
+                self.next_turn();
                 Ok(flipped_count + 1)
             }
             Err(e) => return Err(e),
@@ -244,6 +256,20 @@ impl Board {
         } else {
             String::new()
         }
+    }
+
+    pub fn to_hash(&self) -> String {
+        let mut hash = String::new();
+        for row in self.cells.iter() {
+            for cell in row.iter() {
+                hash.push(match cell {
+                    Cell::Empty => '0',
+                    Cell::Black => '1',
+                    Cell::White => '2',
+                });
+            }
+        }
+        hash
     }
 
     pub fn is_game_over(&self) -> bool {
