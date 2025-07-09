@@ -1,5 +1,33 @@
 use crate::game::{board::Board, cell::Cell, consts::SIZE};
 
+pub struct Action {
+    pub pos: (usize, usize),
+    pub score: isize,
+}
+
+pub enum HeuristicType {
+    Absolute,
+    Matrix,
+    Mobility,
+    Mixte,
+}
+
+impl HeuristicType {
+    pub fn evaluate(
+        &self,
+        board: &Board,
+        player: Cell,
+        matrix: Option<[[isize; SIZE]; SIZE]>,
+    ) -> isize {
+        match self {
+            HeuristicType::Absolute => heuristic_absolute(board, player),
+            HeuristicType::Matrix => heuristic_matrix(board, player, &matrix.unwrap()),
+            HeuristicType::Mobility => heuristic_mobility(board, player),
+            HeuristicType::Mixte => heuristic_mixte(board, player, &matrix.unwrap()),
+        }
+    }
+}
+
 fn heuristic_absolute(board: &Board, player: Cell) -> isize {
     board.get_nb_discs(player).unwrap() as isize
         - board.get_nb_discs(player.get_opponent()).unwrap() as isize

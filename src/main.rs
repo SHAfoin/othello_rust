@@ -18,95 +18,25 @@
 
 mod ai;
 mod game;
+mod human;
+
 use game::{board::Board, cell::Cell};
+use human::human::Human;
 
-struct Human {
-    color: Cell,
-}
-
-impl Human {
-    fn new(color: Cell) -> Self {
-        Self { color }
-    }
-
-    fn get_color(&self) -> Cell {
-        self.color
-    }
-
-    fn get_player_move(&self) -> Option<(usize, usize)> {
-        loop {
-            println!(
-                "{} : Enter your move (row and column, e.g., '3D'): ",
-                self.get_color()
-            );
-
-            let mut input = String::new();
-            match std::io::stdin().read_line(&mut input) {
-                Ok(_) => {
-                    let input = input.trim();
-
-                    if input == "exit" {
-                        println!("Exiting the game.");
-                        std::process::exit(0);
-                    } else if input == "help" {
-                        println!("Available commands:");
-                        println!("  - Enter your move in 'rowColumn' format (e.g., '3D').");
-                        println!("  - Type 'exit' to quit the game.");
-                        continue;
-                    }
-
-                    match Board::input_to_coordinates(input) {
-                        Some(coords) => return Some(coords),
-                        None => println!(
-                            "Invalid input format. Please use 'rowColumn' format (e.g., '3D')."
-                        ),
-                    }
-                }
-                Err(e) => {
-                    println!("Error reading input: {}", e);
-                    continue;
-                }
-            }
-        }
-    }
-
-    fn play_turn(&self, board: &mut Board) {
-        board
-            .set_nb_legal_moves(self.get_color(), board.has_legal_moves(self.get_color()))
-            .unwrap();
-        board
-            .set_nb_legal_moves(
-                self.get_color().get_opponent(),
-                board.has_legal_moves(self.get_color().get_opponent()),
-            )
-            .unwrap();
-        if let Some(_) = board.get_nb_legal_moves(self.get_color()).unwrap() {
-            println!("{}", board);
-            loop {
-                if let Some((row, col)) = self.get_player_move() {
-                    match board.try_play_move(row, col, self.get_color()) {
-                        Ok(gained_discs) => {
-                            println!("Move played successfully. +{} discs.", gained_discs);
-                            break;
-                        }
-                        Err(e) => {
-                            println!("Error: {}", e);
-                        }
-                    }
-                }
-            }
-        } else {
-            println!("\n{} : No legal moves available.", self.get_color());
-        }
-    }
-}
+use crate::ai::{common::HeuristicType, minmax::AIMinMax};
 
 fn main() {
     let mut board = Board::new();
     let mut player_turn = Cell::Black;
 
     let player1 = Human::new(Cell::Black);
-    let player2 = Human::new(player1.get_color().get_opponent());
+    // let player2 = Human::new(player1.get_color().get_opponent());
+    let player2 = AIMinMax::new(
+        6,                       // Depth of the search tree
+        HeuristicType::Absolute, // Heuristic type to use
+        Cell::White,
+        None,
+    );
 
     println!("Welcome to Othello!\n");
     println!("================");

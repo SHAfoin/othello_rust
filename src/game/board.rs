@@ -105,6 +105,19 @@ impl Board {
 
                 self.nb_discs[index] += 1 + flipped_count; // New disc + flipped discs
                 self.nb_discs[opponent_index] -= flipped_count; // Remove flipped discs from opponent
+
+                let my_moves = match self.has_legal_moves(color) {
+                    Some(moves) => Some(moves.len()),
+                    None => None,
+                };
+                self.set_nb_legal_moves(color, my_moves).unwrap();
+                let opponent_moves = match self.has_legal_moves(color.get_opponent()) {
+                    Some(moves) => Some(moves.len()),
+                    None => None,
+                };
+                self.set_nb_legal_moves(color.get_opponent(), opponent_moves)
+                    .unwrap();
+
                 Ok(flipped_count + 1)
             }
             Err(e) => return Err(e),
@@ -195,17 +208,17 @@ impl Board {
         flipped_count
     }
 
-    pub fn has_legal_moves(&self, color: Cell) -> Option<usize> {
-        let mut count = 0;
+    pub fn has_legal_moves(&self, color: Cell) -> Option<Vec<(usize, usize)>> {
+        let mut legal_moves: Vec<(usize, usize)> = Vec::new();
         for row in 0..SIZE {
             for col in 0..SIZE {
                 if self.can_play(row, col, color).is_ok() {
-                    count += 1;
+                    legal_moves.push((row, col));
                 }
             }
         }
-        if count > 0 {
-            Some(count)
+        if legal_moves.len() > 0 {
+            Some(legal_moves)
         } else {
             None
         }
@@ -317,8 +330,8 @@ mod tests {
 
         let moves_black = board.has_legal_moves(Cell::Black).unwrap();
         let moves_white = board.has_legal_moves(Cell::White).unwrap();
-        assert_eq!(moves_black, 4); // 4 coups légaux initiaux pour noir
-        assert_eq!(moves_white, 4); // 4 coups légaux initiaux pour blanc
+        assert_eq!(moves_black.len(), 4); // 4 coups légaux initiaux pour noir
+        assert_eq!(moves_white.len(), 4); // 4 coups légaux initiaux pour blanc
     }
 
     #[test]
