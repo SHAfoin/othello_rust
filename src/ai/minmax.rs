@@ -1,8 +1,11 @@
+use std::{thread, vec};
+
 use crate::{
     ai::common::{Action, HeuristicType},
     game::{board::Board, cell::Cell, consts::SIZE},
 };
 
+#[derive(Clone, Debug)]
 pub struct AIMinMax {
     depth: usize,
     heuristic: HeuristicType,
@@ -34,7 +37,7 @@ impl AIMinMax {
             pos: (0, 0),
             score: isize::MIN,
         };
-        let mut score = 0;
+        let mut handles = vec![];
 
         if let Some(legal_moves) = board.has_legal_moves(self.get_color()) {
             for case in legal_moves {
@@ -42,15 +45,28 @@ impl AIMinMax {
 
                 match new_board.try_play_move(case.0, case.1, self.get_color()) {
                     Ok(_) => {
-                        score = self.init_tree(board, self.depth);
+                        let ai_cloned = self.clone();
+                        let handle = thread::spawn(move || {
+                            (case, ai_cloned.init_tree(&new_board, ai_cloned.depth))
+                        });
+                        handles.push(handle);
                     }
                     Err(e) => {
                         println!("Error: {}", e);
                     }
                 }
+            }
 
-                if score > best_action.score {
-                    best_action = Action { pos: case, score };
+            for handle in handles {
+                match handle.join() {
+                    Ok((pos, score)) => {
+                        if score > best_action.score {
+                            best_action = Action { pos, score };
+                        }
+                    }
+                    Err(_) => {
+                        println!("Thread panicked");
+                    }
                 }
             }
 

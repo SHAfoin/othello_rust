@@ -1,6 +1,6 @@
-const MAX_DEPTH: u32 = 5; // Maximum depth for the AI search algorithms
+pub const MAX_DEPTH: usize = 5; // Maximum depth for the AI search algorithms
 
-const MATRIX_A: [[isize; 8]; 8] = [
+pub const MATRIX_A: [[isize; 8]; 8] = [
     [100, -20, 10, 5, 5, 10, -20, 100],
     [-20, -50, -2, -2, -2, -2, -50, -20],
     [10, -2, -1, -1, -1, -1, -2, 10],
@@ -11,7 +11,7 @@ const MATRIX_A: [[isize; 8]; 8] = [
     [100, -20, 10, 5, 5, 10, -20, 100],
 ];
 
-const MATRIX_B: [[isize; 8]; 8] = [
+pub const MATRIX_B: [[isize; 8]; 8] = [
     [500, -150, 30, 10, 10, 30, -150, 500],
     [-150, -250, 0, 0, 0, 0, -250, -150],
     [30, 0, 1, 2, 2, 1, 0, 30],

@@ -246,7 +246,7 @@ impl Board {
 impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut display = String::new();
-        display.push_str("\n   A B C D E F G H\n\n");
+        display.push_str("   A B C D E F G H\n\n");
         for (index, row) in self.cells.iter().enumerate() {
             display.push_str(&format!("{}  ", index));
             for cell in row.iter() {

@@ -5,6 +5,7 @@ pub struct Action {
     pub score: isize,
 }
 
+#[derive(Clone, Debug)]
 pub enum HeuristicType {
     Absolute,
     Matrix,

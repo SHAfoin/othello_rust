@@ -52,7 +52,6 @@ impl Human {
 
     pub fn play_turn(&self, board: &mut Board) {
         if let Some(_) = board.get_nb_legal_moves(self.get_color()).unwrap() {
-            println!("{}", board);
             loop {
                 if let Some((row, col)) = self.get_player_move() {
                     match board.try_play_move(row, col, self.get_color()) {
