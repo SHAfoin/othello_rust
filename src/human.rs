@@ -73,5 +73,6 @@ impl Human {
         } else {
             println!("\n{} : No legal moves available.", self.get_color());
         }
+        board.next_turn();
     }
 }

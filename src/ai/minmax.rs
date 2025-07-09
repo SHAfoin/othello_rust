@@ -87,6 +87,7 @@ impl AIMinMax {
         } else {
             println!("\n{} : No legal moves available.", self.get_color());
         }
+        board.next_turn();
     }
 
     pub fn init_tree(&self, board: &Board, depth: usize) -> isize {
