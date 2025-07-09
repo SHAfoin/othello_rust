@@ -96,26 +96,23 @@ impl AIMinMax {
     pub fn tree_step(&self, board: &Board, depth: usize) -> isize {
         let comparation_function: fn(isize, isize) -> isize;
         let mut best_score;
-        let player_color;
         if depth % 2 == 0 {
             comparation_function = isize::max;
             best_score = isize::MIN;
-            player_color = self.get_color();
         } else {
             comparation_function = isize::min;
             best_score = isize::MAX;
-            player_color = self.get_color().get_opponent();
         }
-        if depth == 1 || board.has_legal_moves(player_color) == None {
+        if depth == 1 || board.has_legal_moves(board.get_player_turn()) == None {
             let score = self
                 .heuristic
                 .evaluate(board, self.get_color(), self.matrix);
             return score;
         } else if depth == MAX_DEPTH && ULTRA_THREADING {
             let mut handles = vec![];
-            for case in board.has_legal_moves(player_color).unwrap() {
+            for case in board.has_legal_moves(board.get_player_turn()).unwrap() {
                 let mut new_board = board.clone();
-                match new_board.try_play_move(case.0, case.1, player_color) {
+                match new_board.try_play_move(case.0, case.1, board.get_player_turn()) {
                     Ok(_) => {
                         let ai_cloned = self.clone();
                         let handle =
@@ -140,9 +137,9 @@ impl AIMinMax {
             }
             best_score
         } else {
-            for case in board.has_legal_moves(player_color).unwrap() {
+            for case in board.has_legal_moves(board.get_player_turn()).unwrap() {
                 let mut new_board = board.clone();
-                match new_board.try_play_move(case.0, case.1, player_color) {
+                match new_board.try_play_move(case.0, case.1, board.get_player_turn()) {
                     Ok(_) => {
                         let score = self.tree_step(&new_board, depth - 1);
                         best_score = comparation_function(best_score, score);

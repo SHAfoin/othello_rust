@@ -96,21 +96,16 @@ impl AIAlphaBeta {
     pub fn tree_step(&self, board: &Board, depth: usize, alpha: &isize, beta: &isize) -> isize {
         let mut alpha_mut = alpha.clone();
         let mut beta_mut = beta.clone();
-        let player_color;
-        if depth % 2 == 0 {
-            player_color = self.get_color();
-        } else {
-            player_color = self.get_color().get_opponent();
-        }
-        if depth == 1 || board.has_legal_moves(player_color) == None {
+
+        if depth == 1 || board.has_legal_moves(board.get_player_turn()) == None {
             let score = self
                 .heuristic
                 .evaluate(board, self.get_color(), self.matrix);
             return score;
         } else {
-            for case in board.has_legal_moves(player_color).unwrap() {
+            for case in board.has_legal_moves(board.get_player_turn()).unwrap() {
                 let mut new_board = board.clone();
-                match new_board.try_play_move(case.0, case.1, player_color) {
+                match new_board.try_play_move(case.0, case.1, board.get_player_turn()) {
                     Ok(_) => {
                         let score = self.tree_step(&new_board, depth - 1, &alpha_mut, &beta_mut);
                         if depth % 2 == 1 {
