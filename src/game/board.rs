@@ -24,7 +24,7 @@ impl Board {
         Board {
             cells,
             nb_discs: [2, 2],
-            nb_legal_moves: [None, None],
+            nb_legal_moves: [Some(4), Some(4)], // Initial legal moves for both players
             turn_number: 1,
         }
     }
@@ -55,13 +55,17 @@ impl Board {
         Ok(self.nb_legal_moves[index])
     }
 
-    pub fn set_nb_legal_moves(&mut self, color: Cell, nb_moves: usize) -> Result<(), String> {
+    pub fn set_nb_legal_moves(
+        &mut self,
+        color: Cell,
+        nb_moves: Option<usize>,
+    ) -> Result<(), String> {
         let index = match color {
             Cell::Black => 0,
             Cell::White => 1,
             _ => return Err("Invalid color".to_string()),
         };
-        self.nb_legal_moves[index] = Some(nb_moves);
+        self.nb_legal_moves[index] = nb_moves;
         Ok(())
     }
 
@@ -77,7 +81,12 @@ impl Board {
         &self.cells
     }
 
-    pub fn try_play_move(&mut self, row: usize, col: usize, color: Cell) -> Result<(), String> {
+    pub fn try_play_move(
+        &mut self,
+        row: usize,
+        col: usize,
+        color: Cell,
+    ) -> Result<(usize), String> {
         match self.can_play(row, col, color) {
             Ok(directions) => {
                 self.set_cell(row, col, color);
@@ -96,11 +105,10 @@ impl Board {
 
                 self.nb_discs[index] += 1 + flipped_count; // New disc + flipped discs
                 self.nb_discs[opponent_index] -= flipped_count; // Remove flipped discs from opponent
+                Ok(flipped_count + 1)
             }
             Err(e) => return Err(e),
         }
-
-        Ok(())
     }
 
     pub fn can_play(
@@ -214,6 +222,11 @@ impl Board {
         } else {
             None
         }
+    }
+
+    pub fn is_game_over(&self) -> bool {
+        self.get_nb_legal_moves(Cell::Black).unwrap().is_none()
+            && self.get_nb_legal_moves(Cell::White).unwrap().is_none()
     }
 }
 
