@@ -1,11 +1,9 @@
 use std::{thread, vec};
 
 use crate::{
-    ai::{
-        common::{Action, HeuristicType},
-        consts::{MAX_DEPTH, ULTRA_THREADING},
-    },
-    game::{board::Board, cell::Cell, consts::SIZE},
+    ai::common::{Action, HeuristicType},
+    consts::{MAX_DEPTH, SIZE, ULTRA_THREADING},
+    game::{board::Board, cell::Cell},
 };
 
 #[derive(Clone, Debug)]

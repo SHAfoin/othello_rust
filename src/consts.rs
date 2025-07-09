@@ -1,3 +1,4 @@
+pub const SIZE: usize = 8;
 pub const MAX_DEPTH: usize = 6; // Maximum depth for the AI search algorithms
 pub const ULTRA_THREADING: bool = false; // Enable or disable ultra threading for AI calculations
 
@@ -22,3 +23,14 @@ pub const MATRIX_B: [[isize; 8]; 8] = [
     [-150, -250, 0, 0, 0, 0, -250, -150],
     [500, -150, 30, 10, 10, 30, -150, 500],
 ];
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn size_even() {
+        assert_eq!(SIZE % 2, 0);
+    }
+}

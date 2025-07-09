@@ -1,4 +1,5 @@
-use crate::game::{board::Board, cell::Cell, consts::SIZE};
+use crate::consts::SIZE;
+use crate::game::{board::Board, cell::Cell};
 
 pub struct Action {
     pub pos: (usize, usize),

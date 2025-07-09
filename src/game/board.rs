@@ -1,6 +1,7 @@
 use std::fmt;
 
-use crate::game::{cell::Cell, consts::SIZE};
+use crate::consts::SIZE;
+use crate::game::cell::Cell;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Board {

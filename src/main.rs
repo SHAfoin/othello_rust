@@ -17,13 +17,17 @@
 //  ===================================================================
 
 mod ai;
+mod consts;
 mod game;
 mod human;
 
 use game::{board::Board, cell::Cell};
 use human::Human;
 
-use crate::ai::{common::HeuristicType, consts::MAX_DEPTH, minmax::AIMinMax};
+use crate::{
+    ai::{common::HeuristicType, minmax::AIMinMax},
+    consts::MAX_DEPTH,
+};
 
 fn main() {
     let mut board = Board::new();
