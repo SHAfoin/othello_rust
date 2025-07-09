@@ -238,6 +238,14 @@ impl Board {
         }
     }
 
+    pub fn coordinates_to_input(row: usize, col: usize) -> String {
+        if row < SIZE && col < SIZE {
+            format!("{}{}", row, (col as u8 + b'A') as char)
+        } else {
+            String::new()
+        }
+    }
+
     pub fn is_game_over(&self) -> bool {
         self.get_nb_legal_moves(Cell::Black).unwrap().is_none()
             && self.get_nb_legal_moves(Cell::White).unwrap().is_none()

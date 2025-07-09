@@ -73,7 +73,12 @@ impl AIAlphaBeta {
 
             match board.try_play_move(best_action.pos.0, best_action.pos.1, self.get_color()) {
                 Ok(gained_discs) => {
-                    println!("Move played successfully. +{} discs.", gained_discs);
+                    println!(
+                        "Move played successfully by {} in {}. +{} discs.",
+                        self.get_color(),
+                        Board::coordinates_to_input(best_action.pos.0, best_action.pos.1),
+                        gained_discs
+                    );
                 }
                 Err(e) => {
                     println!("Error: {}", e);
@@ -92,10 +97,6 @@ impl AIAlphaBeta {
         let mut alpha_mut = alpha.clone();
         let mut beta_mut = beta.clone();
         let player_color;
-        println!(
-            "AIAlphaBeta: depth {}, alpha {}, beta {}",
-            depth, alpha_mut, beta_mut
-        );
         if depth % 2 == 0 {
             player_color = self.get_color();
         } else {
@@ -118,10 +119,6 @@ impl AIAlphaBeta {
                                 beta_mut = score
                             }
                             if alpha_mut >= beta_mut {
-                                println!(
-                                    "Pruning at depth {}, alpha {}, beta {}",
-                                    depth, alpha_mut, beta_mut,
-                                );
                                 return beta_mut;
                             }
                         } else {
@@ -130,10 +127,6 @@ impl AIAlphaBeta {
                                 alpha_mut = score
                             }
                             if alpha_mut >= beta_mut {
-                                println!(
-                                    "Pruning at depth {}, alpha {}, beta {}",
-                                    depth, alpha_mut, beta_mut,
-                                );
                                 return alpha_mut;
                             }
                         }

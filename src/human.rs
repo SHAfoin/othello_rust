@@ -56,7 +56,12 @@ impl Human {
                 if let Some((row, col)) = self.get_player_move() {
                     match board.try_play_move(row, col, self.get_color()) {
                         Ok(gained_discs) => {
-                            println!("Move played successfully. +{} discs.", gained_discs);
+                            println!(
+                                "Move played successfully by {} in {}. +{} discs.",
+                                self.get_color(),
+                                Board::coordinates_to_input(row, col),
+                                gained_discs
+                            );
                             break;
                         }
                         Err(e) => {

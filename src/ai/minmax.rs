@@ -73,7 +73,12 @@ impl AIMinMax {
 
             match board.try_play_move(best_action.pos.0, best_action.pos.1, self.get_color()) {
                 Ok(gained_discs) => {
-                    println!("Move played successfully. +{} discs.", gained_discs);
+                    println!(
+                        "Move played successfully by {} in {}. +{} discs.",
+                        self.get_color(),
+                        Board::coordinates_to_input(best_action.pos.0, best_action.pos.1),
+                        gained_discs
+                    );
                 }
                 Err(e) => {
                     println!("Error: {}", e);
