@@ -21,7 +21,7 @@ mod game;
 mod human;
 
 use game::{board::Board, cell::Cell};
-use human::human::Human;
+use human::Human;
 
 use crate::ai::{common::HeuristicType, minmax::AIMinMax};
 
