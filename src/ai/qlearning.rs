@@ -4,7 +4,7 @@ use std::{collections::HashMap, fs::File, hash::Hash, io::Write};
 use crate::{
     ai::common::HeuristicType,
     consts::{EPSILON, GAMMA, LAMBDA_LEARN, MATRIX_A, SIZE},
-    game::board::Board,
+    game::{board::Board, cell::Cell},
 };
 
 pub struct QLearning {
@@ -13,16 +13,18 @@ pub struct QLearning {
     heuristic: HeuristicType,
     epoch: usize,
     epsilon: f64,
+    color: Cell,
 }
 
 impl QLearning {
-    pub fn new(max_step: usize, heuristic: HeuristicType, epoch: usize) -> Self {
+    pub fn new(max_step: usize, heuristic: HeuristicType, epoch: usize, color: Cell) -> Self {
         Self {
             max_step: max_step,
             q_table: HashMap::new(),
             heuristic,
             epoch: epoch,
             epsilon: EPSILON,
+            color: color, // Default color, can be changed later
         }
     }
 
@@ -155,9 +157,66 @@ impl QLearning {
             // osef des solutions car objectif c'est l'entrainer pas de trouver une solution
         }
         // exporter la q_table dans un fichier
-        let json = serde_json::to_string_pretty(&self.get_q_table()).unwrap();
-        let mut file = File::create("foo.txt").unwrap();
-        file.write_all(json.as_bytes()).unwrap();
-        // println!("Q-table after {} epochs:\n{}", self.epoch, json);
+        self.export_q_table("q_table.json");
+    }
+
+    pub fn import_q_table(&mut self, file_path: &str) {
+        println!("Importing Q-table from {}...", file_path);
+        let file = File::open(file_path).expect("Could not open file");
+        let q_table: HashMap<String, HashMap<String, isize>> =
+            serde_json::from_reader(file).expect("Could not parse JSON");
+        self.q_table = q_table;
+        println!("Q-table imported successfully!");
+    }
+
+    pub fn export_q_table(&self, file_path: &str) {
+        let json =
+            serde_json::to_string_pretty(&self.q_table).expect("Could not serialize Q-table");
+        let mut file = File::create(file_path).expect("Could not create file");
+        file.write_all(json.as_bytes())
+            .expect("Could not write to file");
+    }
+
+    pub fn play_turn(&self, board: &mut Board) {
+        if let Some(actions) = board.has_legal_moves(board.get_player_turn()) {
+            // choisir l'action avec la valeur q la plus élevée
+            let mut best_action = None;
+            let mut best_value = isize::MIN;
+            if let Some(q_values) = self.get_q_table().get(&board.to_hash()) {
+                for (action, value) in q_values {
+                    if *value > best_value {
+                        best_value = *value;
+                        best_action = Some(action.clone());
+                    }
+                }
+                println!("Best action found in Q_table with value {}", best_value);
+            } else {
+                println!("No action in the Q_table for this state, choosing a random action.");
+                // choisir une action aléatoire
+                let random_index = rng().random_range(0..actions.len());
+                let random_action =
+                    Board::coordinates_to_input(actions[random_index].0, actions[random_index].1);
+                best_action = Some(random_action);
+            }
+
+            let action_coords = Board::input_to_coordinates(best_action.unwrap().as_str()).unwrap();
+
+            match board.try_play_move(action_coords.0, action_coords.1, board.get_player_turn()) {
+                Ok(gained_discs) => {
+                    println!(
+                        "Move played successfully by {} in {}. +{} discs.",
+                        board.get_player_turn(),
+                        Board::coordinates_to_input(action_coords.0, action_coords.1),
+                        gained_discs
+                    );
+                }
+                Err(e) => {
+                    println!("Error: {}", e);
+                }
+            }
+        } else {
+            println!("\n{} : No legal moves available.", board.get_player_turn());
+        }
+        board.next_turn();
     }
 }
