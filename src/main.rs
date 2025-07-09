@@ -21,12 +21,11 @@ mod consts;
 mod game;
 mod human;
 
-use game::{board::Board, cell::Cell};
-use human::Human;
-
 use crate::{
-    ai::{common::HeuristicType, minmax::AIMinMax},
+    ai::{alphabeta::AIAlphaBeta, common::HeuristicType, minmax::AIMinMax},
     consts::MAX_DEPTH,
+    game::{board::Board, cell::Cell},
+    human::Human,
 };
 
 fn main() {
@@ -34,14 +33,14 @@ fn main() {
     let mut player_turn = Cell::Black;
 
     // let player1 = Human::new(Cell::Black);
-    let player1 = AIMinMax::new(
+    let player1 = AIAlphaBeta::new(
         MAX_DEPTH,               // Depth of the search tree
         HeuristicType::Absolute, // Heuristic type to use
         Cell::Black,
         None,
     );
     // let player2 = Human::new(player1.get_color().get_opponent());
-    let player2 = AIMinMax::new(
+    let player2 = AIAlphaBeta::new(
         MAX_DEPTH,               // Depth of the search tree
         HeuristicType::Absolute, // Heuristic type to use
         Cell::White,
