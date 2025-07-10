@@ -176,25 +176,25 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     KeyCode::Enter => match app.current_mode.selected() {
                         Some(0) => {
                             app.current_screen = CurrentScreen::Game;
-                            println!("Human vs Human selected");
                         }
                         Some(1) => {
                             app.current_screen = CurrentScreen::HumanVsAI;
-                            println!("Human vs AI selected");
                         }
                         Some(2) => {
                             app.current_screen = CurrentScreen::AIvsAI;
-                            println!("AI vs AI selected");
                         }
                         Some(3) => {
                             app.current_screen = CurrentScreen::QLearningParameters;
-                            println!("Q-Learning Training selected");
                         }
                         _ => {}
                     },
                     _ => {}
                 },
-                // CurrentScreen::Game => match key.code {},
+                CurrentScreen::Game => match key.code {
+                    KeyCode::Char('q') => return Ok(()),
+
+                    _ => {}
+                },
                 // CurrentScreen::Tutorial => match key.code {},
                 // CurrentScreen::HumanVsAI => match key.code {},
                 // CurrentScreen::AIvsAI => match key.code {},
