@@ -4,7 +4,10 @@ use std::{collections::HashMap, fs::File, hash::Hash, io::Write};
 use crate::{
     ai::common::HeuristicType,
     consts::{EPSILON, GAMMA, LAMBDA_LEARN, MATRIX_A, SIZE},
-    game::{board::Board, cell::Cell},
+    game::{
+        board::{Board, Player},
+        cell::Cell,
+    },
 };
 
 pub struct QLearning {
@@ -176,8 +179,10 @@ impl QLearning {
         file.write_all(json.as_bytes())
             .expect("Could not write to file");
     }
+}
 
-    pub fn play_turn(&self, board: &mut Board) {
+impl Player for QLearning {
+    fn play_turn(&self, board: &mut Board) {
         if let Some(actions) = board.has_legal_moves(board.get_player_turn()) {
             // choisir l'action avec la valeur q la plus élevée
             let mut best_action = None;

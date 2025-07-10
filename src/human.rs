@@ -1,4 +1,7 @@
-use crate::game::{board::Board, cell::Cell};
+use crate::game::{
+    board::{Board, Player},
+    cell::Cell,
+};
 
 pub struct Human {
     color: Cell,
@@ -49,8 +52,10 @@ impl Human {
             }
         }
     }
+}
 
-    pub fn play_turn(&self, board: &mut Board) {
+impl Player for Human {
+    fn play_turn(&self, board: &mut Board) {
         if let Some(_) = board.get_nb_legal_moves(self.get_color()).unwrap() {
             loop {
                 if let Some((row, col)) = self.get_player_move() {

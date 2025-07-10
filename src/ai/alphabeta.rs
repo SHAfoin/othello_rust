@@ -3,7 +3,10 @@ use std::thread;
 use crate::{
     ai::common::{Action, HeuristicType},
     consts::{MAX_DEPTH, SIZE, ULTRA_THREADING},
-    game::{board::Board, cell::Cell},
+    game::{
+        board::{Board, Player},
+        cell::Cell,
+    },
 };
 
 #[derive(Clone, Debug)]
@@ -33,7 +36,61 @@ impl AIAlphaBeta {
         self.color
     }
 
-    pub fn play_turn(&self, board: &mut Board) {
+    pub fn init_tree(&self, board: &Board, depth: usize) -> isize {
+        self.tree_step(board, depth, &isize::MIN, &isize::MAX)
+    }
+
+    pub fn tree_step(&self, board: &Board, depth: usize, alpha: &isize, beta: &isize) -> isize {
+        let mut alpha_mut = alpha.clone();
+        let mut beta_mut = beta.clone();
+
+        if depth == 1 || board.has_legal_moves(board.get_player_turn()) == None {
+            let score = self
+                .heuristic
+                .evaluate(board, self.get_color(), self.matrix);
+            return score;
+        } else {
+            for case in board.has_legal_moves(board.get_player_turn()).unwrap() {
+                let mut new_board = board.clone();
+                match new_board.try_play_move(case.0, case.1, board.get_player_turn()) {
+                    Ok(_) => {
+                        let score = self.tree_step(&new_board, depth - 1, &alpha_mut, &beta_mut);
+                        if depth % 2 == 1 {
+                            // je suis sur min
+                            if score < beta_mut {
+                                beta_mut = score
+                            }
+                            if alpha_mut >= beta_mut {
+                                return beta_mut;
+                            }
+                        } else {
+                            // je suis sur max
+                            if score > alpha_mut {
+                                alpha_mut = score
+                            }
+                            if alpha_mut >= beta_mut {
+                                return alpha_mut;
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        println!("Error: {}", e);
+                    }
+                }
+            }
+            if depth % 2 == 1 {
+                // je suis sur min
+                return beta_mut;
+            } else {
+                // je suis sur max
+                return alpha_mut;
+            }
+        }
+    }
+}
+
+impl Player for AIAlphaBeta {
+    fn play_turn(&self, board: &mut Board) {
         let mut best_action = Action {
             pos: (0, 0),
             score: isize::MIN,
@@ -88,57 +145,5 @@ impl AIAlphaBeta {
             println!("\n{} : No legal moves available.", self.get_color());
         }
         board.next_turn();
-    }
-
-    pub fn init_tree(&self, board: &Board, depth: usize) -> isize {
-        self.tree_step(board, depth, &isize::MIN, &isize::MAX)
-    }
-
-    pub fn tree_step(&self, board: &Board, depth: usize, alpha: &isize, beta: &isize) -> isize {
-        let mut alpha_mut = alpha.clone();
-        let mut beta_mut = beta.clone();
-
-        if depth == 1 || board.has_legal_moves(board.get_player_turn()) == None {
-            let score = self
-                .heuristic
-                .evaluate(board, self.get_color(), self.matrix);
-            return score;
-        } else {
-            for case in board.has_legal_moves(board.get_player_turn()).unwrap() {
-                let mut new_board = board.clone();
-                match new_board.try_play_move(case.0, case.1, board.get_player_turn()) {
-                    Ok(_) => {
-                        let score = self.tree_step(&new_board, depth - 1, &alpha_mut, &beta_mut);
-                        if depth % 2 == 1 {
-                            // je suis sur min
-                            if score < beta_mut {
-                                beta_mut = score
-                            }
-                            if alpha_mut >= beta_mut {
-                                return beta_mut;
-                            }
-                        } else {
-                            // je suis sur max
-                            if score > alpha_mut {
-                                alpha_mut = score
-                            }
-                            if alpha_mut >= beta_mut {
-                                return alpha_mut;
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        println!("Error: {}", e);
-                    }
-                }
-            }
-            if depth % 2 == 1 {
-                // je suis sur min
-                return beta_mut;
-            } else {
-                // je suis sur max
-                return alpha_mut;
-            }
-        }
     }
 }

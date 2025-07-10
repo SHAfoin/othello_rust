@@ -12,6 +12,10 @@ pub struct Board {
     player_turn: Cell,
 }
 
+pub trait Player {
+    fn play_turn(&self, board: &mut Board);
+}
+
 impl Board {
     pub fn new() -> Self {
         let mut cells = [[Cell::Empty; SIZE]; SIZE];
