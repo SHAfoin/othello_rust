@@ -25,7 +25,10 @@ mod human;
 use crate::{
     ai::{alphabeta::AIAlphaBeta, common::HeuristicType, minmax::AIMinMax, qlearning::QLearning},
     consts::{MATRIX_B, MAX_DEPTH},
-    game::{board::Board, cell::Cell},
+    game::{
+        board::{Board, Player},
+        cell::Cell,
+    },
     gui::{
         app::{App, CurrentScreen},
         ui::ui,
@@ -118,6 +121,7 @@ pub fn start_game() {
 fn main() -> Result<(), Box<dyn Error>> {
     println!("Welcome to Othello!\n");
     println!("================\n");
+
     // start_game();
     // q.try_q_learning();
 
@@ -142,13 +146,6 @@ fn main() -> Result<(), Box<dyn Error>> {
     )?;
     terminal.show_cursor()?;
 
-    // if let Ok(do_print) = res {
-    //     if do_print {
-    //         app.print_json()?;
-    //     }
-    // } else if let Err(err) = res {
-    //     println!("{err:?}");
-    // }
     Ok(())
 }
 
@@ -177,6 +174,9 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                         Some(0) => {
                             app.current_screen = CurrentScreen::Game;
                             app.board = Some(Board::new());
+                            app.player_1 = Some(Box::new(Human::new(Cell::Black)));
+                            app.player_2 = Some(Box::new(Human::new(Cell::White)));
+                            app.game_message = Some("It's BLUE turn !".to_string());
                         }
                         Some(1) => {
                             app.current_screen = CurrentScreen::HumanVsAI;
@@ -193,7 +193,37 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                 },
                 CurrentScreen::Game => match key.code {
                     KeyCode::Char('q') => return Ok(()),
-
+                    KeyCode::Up => {
+                        app.select_cell_key(KeyCode::Up);
+                    }
+                    KeyCode::Down => {
+                        app.select_cell_key(KeyCode::Down);
+                    }
+                    KeyCode::Left => {
+                        app.select_cell_key(KeyCode::Left);
+                    }
+                    KeyCode::Right => {
+                        app.select_cell_key(KeyCode::Right);
+                    }
+                    KeyCode::Enter => {
+                        if let Some((row, col)) = app.selected_cell {
+                            if let Some(board) = &mut app.board {
+                                match board.get_player_turn() {
+                                    Cell::Black => {
+                                        if let Some(player) = &app.player_1 {
+                                            player.play_turn(board);
+                                        }
+                                    }
+                                    Cell::White => {
+                                        if let Some(player) = &app.player_2 {
+                                            player.play_turn(board);
+                                        }
+                                    }
+                                    _ => {}
+                                }
+                            }
+                        }
+                    }
                     _ => {}
                 },
                 // CurrentScreen::Tutorial => match key.code {},

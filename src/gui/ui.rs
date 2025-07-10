@@ -151,7 +151,7 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
 
     let left_area = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Min(30), Constraint::Length(5)])
+        .constraints([Constraint::Min(26), Constraint::Length(5)])
         .split(main_area[0]);
 
     let right_area = Layout::default()
@@ -230,6 +230,14 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
                         _ => {
                             frame.render_widget(Block::bordered().style(Style::default()), cell);
                         }
+                    }
+                    if app.selected_cell == Some((i / 9 - 1, i % 9 - 1)) {
+                        frame.render_widget(
+                            Block::new()
+                                .border_type(BorderType::Double)
+                                .style(Style::default().reversed()),
+                            cell,
+                        );
                     }
                 }
             }
