@@ -176,6 +176,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     KeyCode::Enter => match app.current_mode.selected() {
                         Some(0) => {
                             app.current_screen = CurrentScreen::Game;
+                            app.board = Some(Board::new());
                         }
                         Some(1) => {
                             app.current_screen = CurrentScreen::HumanVsAI;

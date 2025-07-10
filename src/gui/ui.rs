@@ -12,6 +12,8 @@ use tui_big_text::{BigText, PixelSize};
 
 use crate::gui::app::{App, CurrentScreen};
 
+use crate::game::{board::Board, cell::Cell};
+
 // WIDGET TOUT FAIT POUR DES POPUPS CENTRÉES
 fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
     // Coupe le rectangle verticalement en trois parties, avec la partie du milieu ayant la hauteur de `percent_y` centrée
@@ -135,7 +137,7 @@ pub fn footer<'a>(frame: &mut Frame, app: &App, text: &'a str) -> Paragraph<'a> 
     mode_footer
 }
 
-pub fn game_screen(frame: &mut Frame, app: &App) {
+pub fn game_screen(frame: &mut Frame, app: &mut App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Fill(1), Constraint::Length(1)])
@@ -184,41 +186,59 @@ pub fn game_screen(frame: &mut Frame, app: &App) {
         .split(game_board_horizontal[1]);
 
     // Grille de jeu
-    let col_constraints = (0..9).map(|_| Constraint::Length(4));
-    let row_constraints = (0..8).map(|_| Constraint::Length(2));
-    let horizontal = Layout::horizontal(col_constraints).spacing(2);
-    let vertical = Layout::vertical(row_constraints).spacing(1);
 
-    let rows = vertical.split(game_board_vertical[1]);
-    let cells = rows.iter().flat_map(|&row| horizontal.split(row).to_vec());
+    if let Some(board) = &app.board {
+        let col_constraints = (0..9).map(|_| Constraint::Length(4));
+        let row_constraints = (0..8).map(|_| Constraint::Length(2));
+        let horizontal = Layout::horizontal(col_constraints).spacing(2);
+        let vertical = Layout::vertical(row_constraints).spacing(1);
 
-    for (i, cell) in cells.enumerate() {
-        if i != 0 {
-            if i % 9 == 0 && i != 0 {
-                frame.render_widget(
-                    Paragraph::new(Span::raw((i / 9).to_string()).into_centered_line())
+        let rows = vertical.split(game_board_vertical[1]);
+        let cells = rows.iter().flat_map(|&row| horizontal.split(row).to_vec());
+
+        for (i, cell) in cells.enumerate() {
+            if i != 0 {
+                if i % 9 == 0 && i != 0 {
+                    frame.render_widget(
+                        Paragraph::new(Span::raw((i / 9).to_string()).into_centered_line())
+                            .block(Block::default()),
+                        cell,
+                    );
+                } else if i < 9 {
+                    frame.render_widget(
+                        Paragraph::new(
+                            Span::raw(char::from_u32(i as u32 + 64).unwrap().to_string())
+                                .into_centered_line(),
+                        )
                         .block(Block::default()),
-                    cell,
-                );
-            } else if i < 9 {
-                frame.render_widget(
-                    Paragraph::new(
-                        Span::raw(char::from_u32(i as u32 + 64).unwrap().to_string())
-                            .into_centered_line(),
-                    )
-                    .block(Block::default()),
-                    cell,
-                );
-            } else {
-                frame.render_widget(
-                    Block::default().style(Style::default().bg(Color::Green)),
-                    cell,
-                );
+                        cell,
+                    );
+                } else {
+                    match board.get_cell(i / 9 - 1, i % 9 - 1) {
+                        Ok(Cell::Black) => {
+                            frame.render_widget(
+                                Block::default().style(Style::default().bg(Color::Blue)),
+                                cell,
+                            );
+                        }
+                        Ok(Cell::White) => {
+                            frame.render_widget(
+                                Block::default().style(Style::default().bg(Color::Yellow)),
+                                cell,
+                            );
+                        }
+                        _ => {
+                            frame.render_widget(Block::bordered().style(Style::default()), cell);
+                        }
+                    }
+                }
             }
         }
+    } else {
+        app.game_message = Some("No game board available !".to_string());
     }
 
-    let game_message = Paragraph::new("Game in progress...")
+    let game_message = Paragraph::new(app.game_message.clone().unwrap_or("No message".into()))
         .block(
             Block::bordered()
                 .border_type(BorderType::Rounded)
