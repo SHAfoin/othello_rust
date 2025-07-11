@@ -4,7 +4,7 @@ use crate::{
     ai::common::{Action, HeuristicType},
     consts::{MAX_DEPTH, SIZE, ULTRA_THREADING},
     game::{
-        board::{Board, Player},
+        board::{Board, HistoryAction, Player},
         cell::Cell,
     },
 };
@@ -89,65 +89,61 @@ impl AIAlphaBeta {
     }
 }
 
-// impl Player for AIAlphaBeta {
+impl Player for AIAlphaBeta {
+    fn is_human(&self) -> bool {
+        false
+    }
+    fn play_turn(
+        &self,
+        board: &mut Board,
+        cell: Option<(usize, usize)>,
+    ) -> Result<(HistoryAction), String> {
+        let mut best_action = Action {
+            pos: (0, 0),
+            score: isize::MIN,
+        };
+        let mut handles = vec![];
 
-// fn is_human(&self) -> bool {
-//     false
-// }
-//     fn play_turn(&self, board: &mut Board) {
-//         let mut best_action = Action {
-//             pos: (0, 0),
-//             score: isize::MIN,
-//         };
-//         let mut handles = vec![];
+        for case in board.has_legal_moves(board.get_player_turn()).unwrap() {
+            let mut new_board = board.clone();
 
-//         if let Some(legal_moves) = board.has_legal_moves(self.get_color()) {
-//             for case in legal_moves {
-//                 let mut new_board = board.clone();
+            match new_board.try_play_move(case.0, case.1, self.get_color()) {
+                Ok(_) => {
+                    let ai_cloned = self.clone();
+                    let handle = thread::spawn(move || {
+                        (case, ai_cloned.init_tree(&new_board, ai_cloned.depth))
+                    });
+                    handles.push(handle);
+                }
+                Err(e) => return Err(format!("Error: {}", e)),
+            }
+        }
 
-//                 match new_board.try_play_move(case.0, case.1, self.get_color()) {
-//                     Ok(_) => {
-//                         let ai_cloned = self.clone();
-//                         let handle = thread::spawn(move || {
-//                             (case, ai_cloned.init_tree(&new_board, ai_cloned.depth))
-//                         });
-//                         handles.push(handle);
-//                     }
-//                     Err(e) => {
-//                         println!("Error: {}", e);
-//                     }
-//                 }
-//             }
+        for handle in handles {
+            match handle.join() {
+                Ok((pos, score)) => {
+                    if score > best_action.score {
+                        best_action = Action { pos, score };
+                    }
+                }
+                Err(_) => {
+                    return Err("Thread join error".to_string());
+                }
+            }
+        }
 
-//             for handle in handles {
-//                 match handle.join() {
-//                     Ok((pos, score)) => {
-//                         if score > best_action.score {
-//                             best_action = Action { pos, score };
-//                         }
-//                     }
-//                     Err(_) => {
-//                         println!("Thread panicked");
-//                     }
-//                 }
-//             }
-
-//             match board.try_play_move(best_action.pos.0, best_action.pos.1, self.get_color()) {
-//                 Ok(gained_discs) => {
-//                     println!(
-//                         "Move played successfully by {} in {}. +{} discs.",
-//                         self.get_color(),
-//                         Board::coordinates_to_input(best_action.pos.0, best_action.pos.1),
-//                         gained_discs
-//                     );
-//                 }
-//                 Err(e) => {
-//                     println!("Error: {}", e);
-//                 }
-//             }
-//         } else {
-//             println!("\n{} : No legal moves available.", self.get_color());
-//         }
-//         board.next_turn();
-//     }
-// }
+        match board.try_play_move(best_action.pos.0, best_action.pos.1, self.get_color()) {
+            Ok(gained_discs) => Ok(HistoryAction {
+                coordinates: Some(Board::coordinates_to_input(
+                    best_action.pos.0,
+                    best_action.pos.1,
+                )),
+                gained_discs: Some(gained_discs),
+                color: self.get_color(),
+                player_turn: board.get_player_turn(),
+                move_number: board.get_turn_number(),
+            }),
+            Err(e) => Err(format!("Error playing move: {}", e)),
+        }
+    }
+}

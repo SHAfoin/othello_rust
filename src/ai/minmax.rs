@@ -128,7 +128,7 @@ impl Player for AIMinMax {
                     handles.push(handle);
                 }
                 Err(e) => {
-                    println!("Error: {}", e);
+                    return Err(format!("Error: {}", e));
                 }
             }
         }
@@ -141,7 +141,7 @@ impl Player for AIMinMax {
                     }
                 }
                 Err(_) => {
-                    println!("Thread panicked");
+                    return Err("Thread join error".to_string());
                 }
             }
         }
