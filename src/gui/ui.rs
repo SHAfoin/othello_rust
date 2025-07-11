@@ -325,26 +325,50 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
         white_score = board.get_nb_discs(Cell::White).unwrap().to_string();
     }
 
-    let player1_score = Paragraph::new(format!("BLACK : {}", black_score)).block(
-        Block::bordered()
-            .border_type(BorderType::Rounded)
-            .title_alignment(Alignment::Center)
-            .padding(Padding::uniform(1)),
-    );
-    let player2_score = Paragraph::new(format!("WHITE : {}", white_score)).block(
-        Block::bordered()
-            .border_type(BorderType::Rounded)
-            .title_alignment(Alignment::Center)
-            .padding(Padding::uniform(1)),
-    );
+    let player1_score_block = Block::bordered()
+        .border_type(BorderType::Rounded)
+        .style(Style::default().fg(Color::Blue))
+        .title("BLACK")
+        .title_alignment(Alignment::Center);
+    let player2_score_block = Block::bordered()
+        .border_type(BorderType::Rounded)
+        .style(Style::default().fg(Color::Yellow))
+        .title("WHITE")
+        .title_alignment(Alignment::Center);
 
-    frame.render_widget(player1_score, game_score[0]);
-    frame.render_widget(player2_score, game_score[1]);
+    frame.render_widget(player1_score_block, game_score[0]);
+    frame.render_widget(player2_score_block, game_score[1]);
+
+    let player1_score_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Fill(1), Constraint::Min(4), Constraint::Fill(1)])
+        .split(game_score[0]);
+    let player2_score_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Fill(1), Constraint::Min(4), Constraint::Fill(1)])
+        .split(game_score[1]);
+
+    let player1_score = BigText::builder()
+        .alignment(Alignment::Center)
+        .pixel_size(PixelSize::Quadrant)
+        .style(Style::default().fg(Color::Blue))
+        .lines(vec![format!("{}", black_score).into()])
+        .build();
+
+    let player2_score = BigText::builder()
+        .alignment(Alignment::Center)
+        .pixel_size(PixelSize::Quadrant)
+        .style(Style::default().fg(Color::Yellow))
+        .lines(vec![format!("{}", white_score).into()])
+        .build();
+
+    frame.render_widget(player1_score, player1_score_layout[1]);
+    frame.render_widget(player2_score, player2_score_layout[1]);
 
     let footer = footer(
         frame,
         app,
-        " (↑↓←→) to choose / (ENTER) to play / (TAB) see history / (q) to quit ",
+        " (↑↓←→) to choose / (ENTER) to play / (q) to quit ",
     );
     frame.render_widget(footer, chunks[1]);
 }
