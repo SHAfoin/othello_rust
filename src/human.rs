@@ -1,6 +1,9 @@
-use crate::game::{
-    board::{Board, Player},
-    cell::Cell,
+use crate::{
+    game::{
+        board::{Board, HistoryAction, Player},
+        cell::Cell,
+    },
+    gui::app::App,
 };
 
 pub struct Human {
@@ -55,29 +58,24 @@ impl Human {
 }
 
 impl Player for Human {
-    fn play_turn(&self, board: &mut Board) {
-        if let Some(_) = board.get_nb_legal_moves(self.get_color()).unwrap() {
-            loop {
-                if let Some((row, col)) = self.get_player_move() {
-                    match board.try_play_move(row, col, self.get_color()) {
-                        Ok(gained_discs) => {
-                            println!(
-                                "Move played successfully by {} in {}. +{} discs.",
-                                self.get_color(),
-                                Board::coordinates_to_input(row, col),
-                                gained_discs
-                            );
-                            break;
-                        }
-                        Err(e) => {
-                            println!("Error: {}", e);
-                        }
-                    }
-                }
+    fn play_turn(
+        &self,
+        board: &mut Board,
+        cell: Option<(usize, usize)>,
+    ) -> Result<(HistoryAction), String> {
+        if let Some((row, col)) = cell {
+            match board.try_play_move(row, col, self.get_color()) {
+                Ok(gained_discs) => Ok(HistoryAction {
+                    coordinates: Some(Board::coordinates_to_input(row, col)),
+                    gained_discs: Some(gained_discs),
+                    color: self.get_color(),
+                    player_turn: board.get_player_turn(),
+                    move_number: board.get_turn_number(),
+                }),
+                Err(e) => Err(format!("Error playing move: {}", e)),
             }
         } else {
-            println!("\n{} : No legal moves available.", self.get_color());
+            Err("No cell selected.".to_string())
         }
-        board.next_turn();
     }
 }

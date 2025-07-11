@@ -2,6 +2,16 @@ use std::fmt;
 
 use crate::consts::SIZE;
 use crate::game::cell::Cell;
+use crate::gui::app::App;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct HistoryAction {
+    pub coordinates: Option<String>,
+    pub gained_discs: Option<usize>,
+    pub color: Cell,
+    pub move_number: usize,
+    pub player_turn: Cell,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Board {
@@ -10,10 +20,16 @@ pub struct Board {
     nb_legal_moves: [Option<usize>; 2],
     turn_number: usize,
     player_turn: Cell,
+    history: Vec<HistoryAction>,
+    game_over: bool,
 }
 
 pub trait Player {
-    fn play_turn(&self, board: &mut Board);
+    fn play_turn(
+        &self,
+        board: &mut Board,
+        cell: Option<(usize, usize)>,
+    ) -> Result<HistoryAction, String>;
 }
 
 impl Board {
@@ -33,7 +49,13 @@ impl Board {
             nb_legal_moves: [Some(4), Some(4)], // Initial legal moves for both players
             turn_number: 1,
             player_turn: Cell::Black, // Black starts first
+            history: Vec::new(),
+            game_over: false,
         }
+    }
+
+    pub fn add_to_history(&mut self, action: HistoryAction) {
+        self.history.push(action);
     }
 
     pub fn get_cell(&self, row: usize, col: usize) -> Result<Cell, String> {
@@ -50,7 +72,22 @@ impl Board {
 
     pub fn next_turn(&mut self) {
         self.turn_number += 1;
-        self.player_turn = self.player_turn.get_opponent();
+        if None
+            == self
+                .get_nb_legal_moves(self.player_turn.get_opponent())
+                .unwrap()
+        {
+            self.add_to_history(HistoryAction {
+                coordinates: None,
+                gained_discs: None,
+                color: self.player_turn.get_opponent(),
+                move_number: self.turn_number,
+                player_turn: self.player_turn,
+            });
+            self.turn_number += 1;
+        } else {
+            self.player_turn = self.player_turn.get_opponent();
+        }
     }
 
     pub fn set_cell(&mut self, row: usize, col: usize, cell: Cell) {
@@ -95,6 +132,10 @@ impl Board {
 
     pub fn get_cells(&self) -> &[[Cell; SIZE]; SIZE] {
         &self.cells
+    }
+
+    pub fn get_history(&self) -> &Vec<HistoryAction> {
+        &self.history
     }
 
     pub fn try_play_move(
@@ -294,8 +335,13 @@ impl Board {
     }
 
     pub fn is_game_over(&self) -> bool {
-        self.get_nb_legal_moves(Cell::Black).unwrap().is_none()
-            && self.get_nb_legal_moves(Cell::White).unwrap().is_none()
+        self.game_over
+    }
+
+    pub fn check_game_over(&mut self) -> bool {
+        self.game_over = self.get_nb_legal_moves(Cell::Black).unwrap().is_none()
+            && self.get_nb_legal_moves(Cell::White).unwrap().is_none();
+        self.game_over
     }
 }
 

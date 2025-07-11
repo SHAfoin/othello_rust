@@ -89,61 +89,61 @@ impl AIAlphaBeta {
     }
 }
 
-impl Player for AIAlphaBeta {
-    fn play_turn(&self, board: &mut Board) {
-        let mut best_action = Action {
-            pos: (0, 0),
-            score: isize::MIN,
-        };
-        let mut handles = vec![];
+// impl Player for AIAlphaBeta {
+//     fn play_turn(&self, board: &mut Board) {
+//         let mut best_action = Action {
+//             pos: (0, 0),
+//             score: isize::MIN,
+//         };
+//         let mut handles = vec![];
 
-        if let Some(legal_moves) = board.has_legal_moves(self.get_color()) {
-            for case in legal_moves {
-                let mut new_board = board.clone();
+//         if let Some(legal_moves) = board.has_legal_moves(self.get_color()) {
+//             for case in legal_moves {
+//                 let mut new_board = board.clone();
 
-                match new_board.try_play_move(case.0, case.1, self.get_color()) {
-                    Ok(_) => {
-                        let ai_cloned = self.clone();
-                        let handle = thread::spawn(move || {
-                            (case, ai_cloned.init_tree(&new_board, ai_cloned.depth))
-                        });
-                        handles.push(handle);
-                    }
-                    Err(e) => {
-                        println!("Error: {}", e);
-                    }
-                }
-            }
+//                 match new_board.try_play_move(case.0, case.1, self.get_color()) {
+//                     Ok(_) => {
+//                         let ai_cloned = self.clone();
+//                         let handle = thread::spawn(move || {
+//                             (case, ai_cloned.init_tree(&new_board, ai_cloned.depth))
+//                         });
+//                         handles.push(handle);
+//                     }
+//                     Err(e) => {
+//                         println!("Error: {}", e);
+//                     }
+//                 }
+//             }
 
-            for handle in handles {
-                match handle.join() {
-                    Ok((pos, score)) => {
-                        if score > best_action.score {
-                            best_action = Action { pos, score };
-                        }
-                    }
-                    Err(_) => {
-                        println!("Thread panicked");
-                    }
-                }
-            }
+//             for handle in handles {
+//                 match handle.join() {
+//                     Ok((pos, score)) => {
+//                         if score > best_action.score {
+//                             best_action = Action { pos, score };
+//                         }
+//                     }
+//                     Err(_) => {
+//                         println!("Thread panicked");
+//                     }
+//                 }
+//             }
 
-            match board.try_play_move(best_action.pos.0, best_action.pos.1, self.get_color()) {
-                Ok(gained_discs) => {
-                    println!(
-                        "Move played successfully by {} in {}. +{} discs.",
-                        self.get_color(),
-                        Board::coordinates_to_input(best_action.pos.0, best_action.pos.1),
-                        gained_discs
-                    );
-                }
-                Err(e) => {
-                    println!("Error: {}", e);
-                }
-            }
-        } else {
-            println!("\n{} : No legal moves available.", self.get_color());
-        }
-        board.next_turn();
-    }
-}
+//             match board.try_play_move(best_action.pos.0, best_action.pos.1, self.get_color()) {
+//                 Ok(gained_discs) => {
+//                     println!(
+//                         "Move played successfully by {} in {}. +{} discs.",
+//                         self.get_color(),
+//                         Board::coordinates_to_input(best_action.pos.0, best_action.pos.1),
+//                         gained_discs
+//                     );
+//                 }
+//                 Err(e) => {
+//                     println!("Error: {}", e);
+//                 }
+//             }
+//         } else {
+//             println!("\n{} : No legal moves available.", self.get_color());
+//         }
+//         board.next_turn();
+//     }
+// }

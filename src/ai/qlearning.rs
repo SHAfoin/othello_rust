@@ -59,7 +59,7 @@ impl QLearning {
         let mut total_r = 0;
 
         // tant que step pas atteinte ou nombre d'itérations
-        while step < self.max_step && !board.is_game_over() {
+        while step < self.max_step && !board.check_game_over() {
             step += 1;
             // choisir un état initial
             // si epsilon > random, choisir une action aléatoire
@@ -93,7 +93,7 @@ impl QLearning {
                     self.heuristic
                         .evaluate(&board, board.get_player_turn(), Some(MATRIX_A));
 
-                if board.is_game_over() {
+                if board.check_game_over() {
                     let winner = board.get_winner();
 
                     if let Some(w) = winner {
@@ -147,7 +147,7 @@ impl QLearning {
             // retourner récompense totale, récompense de l'état final, si fini ou pas
         }
 
-        (total_r, board.is_game_over())
+        (total_r, board.check_game_over())
     }
 
     pub fn try_q_learning(&mut self) {
@@ -181,47 +181,47 @@ impl QLearning {
     }
 }
 
-impl Player for QLearning {
-    fn play_turn(&self, board: &mut Board) {
-        if let Some(actions) = board.has_legal_moves(board.get_player_turn()) {
-            // choisir l'action avec la valeur q la plus élevée
-            let mut best_action = None;
-            let mut best_value = isize::MIN;
-            if let Some(q_values) = self.get_q_table().get(&board.to_hash()) {
-                for (action, value) in q_values {
-                    if *value > best_value {
-                        best_value = *value;
-                        best_action = Some(action.clone());
-                    }
-                }
-                println!("Best action found in Q_table with value {}", best_value);
-            } else {
-                println!("No action in the Q_table for this state, choosing a random action.");
-                // choisir une action aléatoire
-                let random_index = rng().random_range(0..actions.len());
-                let random_action =
-                    Board::coordinates_to_input(actions[random_index].0, actions[random_index].1);
-                best_action = Some(random_action);
-            }
+// impl Player for QLearning {
+//     fn play_turn(&self, board: &mut Board) {
+//         if let Some(actions) = board.has_legal_moves(board.get_player_turn()) {
+//             // choisir l'action avec la valeur q la plus élevée
+//             let mut best_action = None;
+//             let mut best_value = isize::MIN;
+//             if let Some(q_values) = self.get_q_table().get(&board.to_hash()) {
+//                 for (action, value) in q_values {
+//                     if *value > best_value {
+//                         best_value = *value;
+//                         best_action = Some(action.clone());
+//                     }
+//                 }
+//                 println!("Best action found in Q_table with value {}", best_value);
+//             } else {
+//                 println!("No action in the Q_table for this state, choosing a random action.");
+//                 // choisir une action aléatoire
+//                 let random_index = rng().random_range(0..actions.len());
+//                 let random_action =
+//                     Board::coordinates_to_input(actions[random_index].0, actions[random_index].1);
+//                 best_action = Some(random_action);
+//             }
 
-            let action_coords = Board::input_to_coordinates(best_action.unwrap().as_str()).unwrap();
+//             let action_coords = Board::input_to_coordinates(best_action.unwrap().as_str()).unwrap();
 
-            match board.try_play_move(action_coords.0, action_coords.1, board.get_player_turn()) {
-                Ok(gained_discs) => {
-                    println!(
-                        "Move played successfully by {} in {}. +{} discs.",
-                        board.get_player_turn(),
-                        Board::coordinates_to_input(action_coords.0, action_coords.1),
-                        gained_discs
-                    );
-                }
-                Err(e) => {
-                    println!("Error: {}", e);
-                }
-            }
-        } else {
-            println!("\n{} : No legal moves available.", board.get_player_turn());
-        }
-        board.next_turn();
-    }
-}
+//             match board.try_play_move(action_coords.0, action_coords.1, board.get_player_turn()) {
+//                 Ok(gained_discs) => {
+//                     println!(
+//                         "Move played successfully by {} in {}. +{} discs.",
+//                         board.get_player_turn(),
+//                         Board::coordinates_to_input(action_coords.0, action_coords.1),
+//                         gained_discs
+//                     );
+//                 }
+//                 Err(e) => {
+//                     println!("Error: {}", e);
+//                 }
+//             }
+//         } else {
+//             println!("\n{} : No legal moves available.", board.get_player_turn());
+//         }
+//         board.next_turn();
+//     }
+// }

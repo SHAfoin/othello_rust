@@ -37,6 +37,10 @@ impl App {
         }
     }
 
+    pub fn set_game_message(&mut self, message: Option<String>) {
+        self.game_message = message;
+    }
+
     pub fn select_cell_key(&mut self, key: KeyCode) {
         if self.selected_cell.is_none() {
             self.selected_cell = Some((0, 0)); // Initialiser la cellule sélectionnée si elle est None
