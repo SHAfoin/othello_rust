@@ -142,27 +142,32 @@ pub fn footer<'a>(frame: &mut Frame, app: &App, text: &'a str) -> Paragraph<'a> 
 }
 
 pub fn game_screen(frame: &mut Frame, app: &mut App) {
+    // Ecran découpé en zone de base + footer
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Fill(1), Constraint::Length(1)])
         .flex(Flex::Center)
         .split(frame.area());
 
+    // Zone de base découpée en zone gauche / droite
     let main_area = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Min(66), Constraint::Percentage(40)])
         .split(chunks[0]);
 
+    // Zone gauche découpée en deux : gameboard et message
     let left_area = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Min(30), Constraint::Length(5)])
         .split(main_area[0]);
 
+    // Zone droite découpée en deux : historique et score
     let right_area = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Percentage(70), Constraint::Percentage(30)])
         .split(main_area[1]);
 
+    // Zone de jeu
     let game_board = Block::bordered()
         .border_type(BorderType::Rounded)
         .title(" Game Board ")
@@ -171,6 +176,7 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
 
     frame.render_widget(&game_board, left_area[0]);
 
+    // Centrer la grille horizontalement
     let game_board_horizontal = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
@@ -180,6 +186,7 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
         ])
         .split(left_area[0]);
 
+    // Centrer la grille verticalement
     let game_board_vertical = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -190,7 +197,6 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
         .split(game_board_horizontal[1]);
 
     // Grille de jeu
-
     if let Some(board) = &app.board {
         let col_constraints = (0..SIZE + 1).map(|_| Constraint::Length(4));
         let row_constraints = (0..SIZE + 1).map(|_| Constraint::Length(2));
@@ -250,6 +256,7 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
         app.game_message = Some("No game board available !".to_string());
     }
 
+    // Zone message de jeu
     let game_message = Paragraph::new(app.game_message.clone().unwrap_or("No message".into()))
         .block(
             Block::bordered()
@@ -260,12 +267,14 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
 
     frame.render_widget(game_message, left_area[1]);
 
+    // Zone historique du jeu
     let history_block = Block::bordered()
         .border_type(BorderType::Rounded)
         .title("Game History")
         .title_alignment(Alignment::Center)
         .padding(Padding::uniform(1));
 
+    // Générer l'historique du jeu
     let mut game_history = List::default();
     if let Some(board) = &app.board {
         let history_items: Vec<ListItem> = board
@@ -312,11 +321,13 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
         &mut ListState::default(),
     );
 
+    // Zone des scores
     let game_score = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
         .split(right_area[1]);
 
+    // Récupérer les scores des joueurs
     let mut black_score = String::new();
     let mut white_score = String::new();
 
@@ -325,6 +336,7 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
         white_score = board.get_nb_discs(Cell::White).unwrap().to_string();
     }
 
+    // Créer les blocs de score pour chaque joueur
     let player1_score_block = Block::bordered()
         .border_type(BorderType::Rounded)
         .style(Style::default().fg(Color::Blue))
@@ -339,6 +351,7 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
     frame.render_widget(player1_score_block, game_score[0]);
     frame.render_widget(player2_score_block, game_score[1]);
 
+    // Centrer les scores dedans
     let player1_score_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Fill(1), Constraint::Min(4), Constraint::Fill(1)])
@@ -348,6 +361,7 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
         .constraints([Constraint::Fill(1), Constraint::Min(4), Constraint::Fill(1)])
         .split(game_score[1]);
 
+    // Utiliser BigText pour les scores
     let player1_score = BigText::builder()
         .alignment(Alignment::Center)
         .pixel_size(PixelSize::Quadrant)
@@ -365,6 +379,7 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
     frame.render_widget(player1_score, player1_score_layout[1]);
     frame.render_widget(player2_score, player2_score_layout[1]);
 
+    // Footer
     let footer = footer(
         frame,
         app,
