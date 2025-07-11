@@ -155,16 +155,14 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
         .constraints([Constraint::Min(66), Constraint::Percentage(40)])
         .split(chunks[0]);
 
-    // Zone gauche découpée en deux : gameboard et message
-    let left_area = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Min(30), Constraint::Length(5)])
-        .split(main_area[0]);
-
     // Zone droite découpée en deux : historique et score
     let right_area = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage(70), Constraint::Percentage(30)])
+        .constraints([
+            Constraint::Percentage(70),
+            Constraint::Length(5),
+            Constraint::Percentage(30),
+        ])
         .split(main_area[1]);
 
     // Zone de jeu
@@ -174,7 +172,7 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
         .title_alignment(Alignment::Center)
         .padding(Padding::uniform(0));
 
-    frame.render_widget(&game_board, left_area[0]);
+    frame.render_widget(&game_board, main_area[0]);
 
     // Centrer la grille horizontalement
     let game_board_horizontal = Layout::default()
@@ -184,7 +182,7 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
             Constraint::Length(58),
             Constraint::Fill(1),
         ])
-        .split(left_area[0]);
+        .split(main_area[0]);
 
     // Centrer la grille verticalement
     let game_board_vertical = Layout::default()
@@ -265,7 +263,7 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
         )
         .alignment(Alignment::Center);
 
-    frame.render_widget(game_message, left_area[1]);
+    frame.render_widget(game_message, right_area[1]);
 
     // Zone historique du jeu
     let history_block = Block::bordered()
@@ -325,7 +323,7 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
     let game_score = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(right_area[1]);
+        .split(right_area[2]);
 
     // Récupérer les scores des joueurs
     let mut black_score = String::new();
