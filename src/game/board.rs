@@ -30,6 +30,8 @@ pub trait Player {
         board: &mut Board,
         cell: Option<(usize, usize)>,
     ) -> Result<HistoryAction, String>;
+
+    fn is_human(&self) -> bool;
 }
 
 impl Board {

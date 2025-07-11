@@ -182,6 +182,10 @@ impl QLearning {
 }
 
 // impl Player for QLearning {
+
+// fn is_human(&self) -> bool {
+//     false
+// }
 //     fn play_turn(&self, board: &mut Board) {
 //         if let Some(actions) = board.has_legal_moves(board.get_player_turn()) {
 //             // choisir l'action avec la valeur q la plus élevée

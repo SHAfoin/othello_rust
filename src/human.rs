@@ -58,6 +58,9 @@ impl Human {
 }
 
 impl Player for Human {
+    fn is_human(&self) -> bool {
+        true
+    }
     fn play_turn(
         &self,
         board: &mut Board,

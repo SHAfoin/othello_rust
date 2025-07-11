@@ -90,6 +90,10 @@ impl AIAlphaBeta {
 }
 
 // impl Player for AIAlphaBeta {
+
+// fn is_human(&self) -> bool {
+//     false
+// }
 //     fn play_turn(&self, board: &mut Board) {
 //         let mut best_action = Action {
 //             pos: (0, 0),
