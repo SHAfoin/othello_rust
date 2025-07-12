@@ -1,8 +1,13 @@
+use std::time::Instant;
+
 use ratatui::{crossterm::event::KeyCode, widgets::ListState};
 
 use crate::{
     consts::SIZE,
-    game::board::{Board, Player},
+    game::{
+        board::{Board, Player},
+        cell::Cell,
+    },
 };
 
 pub enum CurrentScreen {
@@ -22,6 +27,7 @@ pub struct App {
     pub player_1: Option<Box<dyn Player>>, // Joueur 1, peut être un humain ou une IA.
     pub player_2: Option<Box<dyn Player>>, // Joueur 2, peut
     pub selected_cell: Option<(usize, usize)>, // Cellule sélectionnée par l'utilisateur, si applicable.
+    pub timer: Option<std::time::Instant>,     // Timer pour le jeu, si applicable.
 }
 
 impl App {
@@ -34,7 +40,80 @@ impl App {
             player_1: None,      // Initialiser sans joueur
             player_2: None,      // Initialiser sans joueur
             selected_cell: None, // Aucune cellule sélectionnée par défaut
+            timer: None,         // Pas de timer initialement
         }
+    }
+
+    pub fn start_game(&mut self, player_1: Box<dyn Player>, player_2: Box<dyn Player>) {
+        self.current_screen = CurrentScreen::Game;
+        self.board = Some(Board::new());
+        self.player_1 = Some(player_1);
+        self.player_2 = Some(player_2);
+        self.game_message = Some(format!(
+            "It's {} turn !",
+            self.board.as_ref().unwrap().get_player_turn()
+        ));
+        self.timer = Some(Instant::now());
+    }
+
+    pub fn gui_play_turn(&mut self) {
+        let mut play_turn_result = Err("Error in Enter".to_string());
+        let mut new_message = None;
+        if let Some(board) = &mut self.board {
+            if !board.is_game_over() {
+                match board.get_player_turn() {
+                    Cell::Black => {
+                        if let Some(player) = &self.player_1 {
+                            play_turn_result = player.play_turn(board, self.selected_cell);
+                        }
+                    }
+                    Cell::White => {
+                        if let Some(player) = &self.player_2 {
+                            play_turn_result = player.play_turn(board, self.selected_cell);
+                        }
+                    }
+                    _ => {
+                        play_turn_result = Err("Invalid player turn".to_string());
+                    }
+                }
+
+                match play_turn_result {
+                    Err(e) => {
+                        self.set_game_message(Some(e));
+                    }
+                    Ok(history_action) => {
+                        board.add_to_history(history_action);
+
+                        if board.check_game_over() {
+                            if let Some(winner) = board.get_winner() {
+                                new_message = Some(format!("Game over! {} is the WINNER!", winner));
+                            } else {
+                                new_message = Some("Game over! It's a draw!".to_string());
+                            }
+                            if let Some(message) = new_message {
+                                self.set_game_message(Some(message));
+                            }
+                        } else {
+                            board.next_turn();
+                            new_message = Some(format!("It's {} turn !", board.get_player_turn()));
+                            if let Some(message) = new_message {
+                                self.set_game_message(Some(message));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn quit_game(&mut self) {
+        self.current_screen = CurrentScreen::Main;
+        self.board = None;
+        self.game_message = None;
+        self.player_1 = None;
+        self.player_2 = None;
+        self.selected_cell = None;
+        self.timer = None;
     }
 
     pub fn set_game_message(&mut self, message: Option<String>) {

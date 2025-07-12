@@ -133,7 +133,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                 if let Some(player) = player_turn {
                     its_a_human_player = player.is_human();
                     if !player.is_human() && !app.board.as_ref().unwrap().is_game_over() {
-                        gui_play_turn(app);
+                        app.gui_play_turn();
                     }
                 }
             }
@@ -159,49 +159,42 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                         }
                         KeyCode::Enter => match app.current_mode.selected() {
                             Some(0) => {
-                                app.current_screen = CurrentScreen::Game;
-                                app.board = Some(Board::new());
-                                app.player_1 = Some(Box::new(Human::new(Cell::Black)));
-                                app.player_2 = Some(Box::new(Human::new(Cell::White)));
-                                app.game_message = Some(format!(
-                                    "It's {} turn !",
-                                    app.board.as_ref().unwrap().get_player_turn()
-                                ));
+                                app.start_game(
+                                    Box::new(Human::new(Cell::Black)),
+                                    Box::new(Human::new(Cell::White)),
+                                );
                             }
                             Some(1) => {
-                                app.current_screen = CurrentScreen::Game;
-                                app.board = Some(Board::new());
-                                app.player_1 = Some(Box::new(Human::new(Cell::Black)));
-                                app.player_2 = Some(Box::new(AIMinMax::new(
-                                    3,
-                                    HeuristicType::Absolute,
-                                    Cell::White,
-                                    None,
-                                )));
-                                app.game_message = Some(format!(
-                                    "It's {} turn !",
-                                    app.board.as_ref().unwrap().get_player_turn()
-                                ));
+                                app.start_game(
+                                    Box::new(AIMinMax::new(
+                                        3,
+                                        HeuristicType::Absolute,
+                                        Cell::Black,
+                                        None,
+                                    )),
+                                    Box::new(AIMinMax::new(
+                                        3,
+                                        HeuristicType::Absolute,
+                                        Cell::White,
+                                        None,
+                                    )),
+                                );
                             }
                             Some(2) => {
-                                app.current_screen = CurrentScreen::Game;
-                                app.board = Some(Board::new());
-                                app.player_1 = Some(Box::new(AIMinMax::new(
-                                    3,
-                                    HeuristicType::Absolute,
-                                    Cell::Black,
-                                    None,
-                                )));
-                                app.player_2 = Some(Box::new(AIMinMax::new(
-                                    3,
-                                    HeuristicType::Absolute,
-                                    Cell::White,
-                                    None,
-                                )));
-                                app.game_message = Some(format!(
-                                    "It's {} turn !",
-                                    app.board.as_ref().unwrap().get_player_turn()
-                                ));
+                                app.start_game(
+                                    Box::new(AIAlphaBeta::new(
+                                        MAX_DEPTH,
+                                        HeuristicType::Mixte,
+                                        Cell::Black,
+                                        Some(MATRIX_B),
+                                    )),
+                                    Box::new(AIAlphaBeta::new(
+                                        MAX_DEPTH,
+                                        HeuristicType::Mixte,
+                                        Cell::White,
+                                        Some(MATRIX_B),
+                                    )),
+                                );
                             }
                             Some(3) => {
                                 app.current_screen = CurrentScreen::QLearningParameters;
@@ -211,7 +204,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                         _ => {}
                     },
                     CurrentScreen::Game => match key.code {
-                        KeyCode::Char('q') => return Ok(()),
+                        KeyCode::Char('q') => app.quit_game(),
                         KeyCode::Up => {
                             if !app.board.as_ref().unwrap().is_game_over() && its_a_human_player {
                                 app.select_cell_key(KeyCode::Up);
@@ -233,9 +226,9 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                             }
                         }
                         KeyCode::Enter => {
-                            if its_a_human_player {
+                            if !app.board.as_ref().unwrap().is_game_over() && its_a_human_player {
                                 if let Some(_) = app.selected_cell.as_ref() {
-                                    gui_play_turn(app);
+                                    app.gui_play_turn();
                                 }
                             }
                         }
@@ -246,56 +239,6 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     // CurrentScreen::AIvsAI => match key.code {},
                     // CurrentScreen::QLearningParameters => match key.code {},
                     _ => return Ok(()),
-                }
-            }
-        }
-    }
-
-    fn gui_play_turn(app: &mut App) {
-        let mut play_turn_result = Err("Error in Enter".to_string());
-        let mut new_message = None;
-        if let Some(board) = &mut app.board {
-            if !board.is_game_over() {
-                match board.get_player_turn() {
-                    Cell::Black => {
-                        if let Some(player) = &app.player_1 {
-                            play_turn_result = player.play_turn(board, app.selected_cell);
-                        }
-                    }
-                    Cell::White => {
-                        if let Some(player) = &app.player_2 {
-                            play_turn_result = player.play_turn(board, app.selected_cell);
-                        }
-                    }
-                    _ => {
-                        play_turn_result = Err("Invalid player turn".to_string());
-                    }
-                }
-
-                match play_turn_result {
-                    Err(e) => {
-                        app.set_game_message(Some(e));
-                    }
-                    Ok(history_action) => {
-                        board.add_to_history(history_action);
-
-                        if board.check_game_over() {
-                            if let Some(winner) = board.get_winner() {
-                                new_message = Some(format!("Game over! {} is the WINNER!", winner));
-                            } else {
-                                new_message = Some("Game over! It's a draw!".to_string());
-                            }
-                            if let Some(message) = new_message {
-                                app.set_game_message(Some(message));
-                            }
-                        } else {
-                            board.next_turn();
-                            new_message = Some(format!("It's {} turn !", board.get_player_turn()));
-                            if let Some(message) = new_message {
-                                app.set_game_message(Some(message));
-                            }
-                        }
-                    }
                 }
             }
         }
