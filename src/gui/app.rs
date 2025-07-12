@@ -16,6 +16,7 @@ pub enum CurrentScreen {
     HumanVsAI,
     AIvsAI,
     QLearningParameters,
+    Exit,
 }
 
 pub struct App {

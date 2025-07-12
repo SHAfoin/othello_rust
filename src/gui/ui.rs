@@ -19,14 +19,14 @@ use crate::{
 use crate::game::{board::Board, cell::Cell};
 
 // WIDGET TOUT FAIT POUR DES POPUPS CENTRÉES
-fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+fn centered_rect(length_x: u16, length_y: u16, r: Rect) -> Rect {
     // Coupe le rectangle verticalement en trois parties, avec la partie du milieu ayant la hauteur de `percent_y` centrée
     let popup_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Percentage((100 - percent_y) / 2),
-            Constraint::Percentage(percent_y),
-            Constraint::Percentage((100 - percent_y) / 2),
+            Constraint::Fill(1),
+            Constraint::Length(length_y),
+            Constraint::Fill(1),
         ])
         .split(r);
 
@@ -34,9 +34,9 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
     Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Percentage((100 - percent_x) / 2),
-            Constraint::Percentage(percent_x),
-            Constraint::Percentage((100 - percent_x) / 2),
+            Constraint::Fill(1),
+            Constraint::Length(length_x),
+            Constraint::Fill(1),
         ])
         .split(popup_layout[1])[1] // Return the middle chunk
 }
@@ -72,6 +72,9 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
         CurrentScreen::QLearningParameters => {
             q_learning_parameters_screen(frame, app);
         }
+        CurrentScreen::Exit => {
+            exit_screen(frame, app);
+        }
     }
 }
 
@@ -79,8 +82,8 @@ pub fn main_screen(frame: &mut Frame, app: &mut App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Fill(1),
             Constraint::Length(8), // au moins 1 ligne de hauteur pour la liste, prend plus si possible
+            Constraint::Fill(1),
             Constraint::Length(8), // au moins 1 ligne de hauteur pour la liste, prend plus si possible
             Constraint::Fill(1),
             Constraint::Length(1), // 3 lignes FIXES de hauteur pour le footer
@@ -88,7 +91,7 @@ pub fn main_screen(frame: &mut Frame, app: &mut App) {
         .flex(Flex::Center)
         .split(frame.area());
 
-    widget_title(frame, app, chunks[1]);
+    widget_title(frame, app, chunks[0]);
 
     widget_menu(frame, app, chunks[2]);
 
@@ -98,6 +101,32 @@ pub fn main_screen(frame: &mut Frame, app: &mut App) {
         chunks[4],
         " (↑↓) to choose / (ENTER) to validate / (q) to quit ",
     );
+}
+
+pub fn exit_screen(frame: &mut Frame, app: &mut App) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Fill(1), Constraint::Length(1)])
+        .flex(Flex::Center)
+        .split(frame.area());
+
+    widget_title(frame, app, chunks[0]);
+
+    let exit_message = Paragraph::new(
+        "Are you sure you want to exit?\n\
+    y/n",
+    )
+    .block(
+        Block::bordered()
+            .border_type(BorderType::Rounded)
+            .title(" Exit Confirmation ")
+            .title_alignment(Alignment::Center)
+            .padding(Padding::uniform(1)),
+    )
+    .alignment(Alignment::Center);
+
+    let exit_layout = centered_rect(40, 6, frame.area());
+    frame.render_widget(exit_message, exit_layout);
 }
 
 pub fn footer<'a>(frame: &mut Frame, app: &App, area: Rect, text: &'a str) {
@@ -446,26 +475,7 @@ fn widget_menu(frame: &mut Frame, app: &mut App, area: Rect) {
 }
 
 fn widget_tutorial(frame: &mut Frame, app: &App, area: Rect) {
-    let vertical_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Fill(1),
-            Constraint::Length(14),
-            Constraint::Fill(1),
-        ])
-        .split(area);
-
-    // On prend la partie du milieu (dans le split) et on la centre horizontalement aussi, et on retourne que le milieu
-    let horizontal_layout = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Fill(1),
-            Constraint::Length(90),
-            Constraint::Fill(1),
-        ])
-        .split(vertical_layout[1]); // Return the middle chunk
-
-    let tutorial_area = centered_rect(30, 40, frame.area());
+    let tutorial_area = centered_rect(90, 14, frame.area());
     let tutorial_block = Block::bordered()
         .border_type(BorderType::Rounded)
         .title(" Tutorial ")
@@ -485,5 +495,5 @@ fn widget_tutorial(frame: &mut Frame, app: &App, area: Rect) {
     .block(tutorial_block)
     .alignment(Alignment::Center);
 
-    frame.render_widget(tutorial_text, horizontal_layout[1]);
+    frame.render_widget(tutorial_text, tutorial_area);
 }

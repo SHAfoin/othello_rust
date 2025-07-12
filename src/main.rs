@@ -199,7 +199,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                         _ => {}
                     },
                     CurrentScreen::Game => match key.code {
-                        KeyCode::Char('q') => app.quit_game(),
+                        KeyCode::Char('q') => app.current_screen = CurrentScreen::Exit,
                         KeyCode::Up => {
                             if !app.board.as_ref().unwrap().is_game_over() && its_a_human_player {
                                 app.select_cell_key(KeyCode::Up);
@@ -234,6 +234,11 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     },
                     CurrentScreen::Tutorial => match key.code {
                         KeyCode::Char('q') => app.current_screen = CurrentScreen::Game,
+                        _ => {}
+                    },
+                    CurrentScreen::Exit => match key.code {
+                        KeyCode::Char('y') | KeyCode::Char('q') => app.quit_game(),
+                        KeyCode::Char('n') => app.current_screen = CurrentScreen::Game,
                         _ => {}
                     },
                     // CurrentScreen::HumanVsAI => match key.code {},
