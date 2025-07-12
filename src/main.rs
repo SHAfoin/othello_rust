@@ -166,12 +166,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                             }
                             Some(1) => {
                                 app.start_game(
-                                    Box::new(AIMinMax::new(
-                                        3,
-                                        HeuristicType::Absolute,
-                                        Cell::Black,
-                                        None,
-                                    )),
+                                    Box::new(Human::new(Cell::Black)),
                                     Box::new(AIMinMax::new(
                                         3,
                                         HeuristicType::Absolute,
