@@ -171,11 +171,25 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
         frame,
         app,
         chunks[1],
-        " (↑↓←→) to choose / (ENTER) to play / (q) to quit ",
+        " (↑↓←→) to choose / (ENTER) to play / (t) for tutorial / (q) to quit ",
     );
 }
 
-pub fn tutorial_screen(frame: &mut Frame, app: &App) {}
+pub fn tutorial_screen(frame: &mut Frame, app: &App) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Fill(1), Constraint::Length(1)])
+        .flex(Flex::Center)
+        .split(frame.area());
+
+    widget_title(frame, app, chunks[0]);
+
+    // Zone de tutoriel
+    widget_tutorial(frame, app, chunks[0]);
+
+    // Footer
+    footer(frame, app, chunks[1], "(q) to resume game ");
+}
 
 pub fn human_vs_ai_screen(frame: &mut Frame, app: &App) {}
 
@@ -429,4 +443,47 @@ fn widget_menu(frame: &mut Frame, app: &mut App, area: Rect) {
         .repeat_highlight_symbol(true);
 
     frame.render_stateful_widget(list, middle_layout[1], &mut app.current_mode);
+}
+
+fn widget_tutorial(frame: &mut Frame, app: &App, area: Rect) {
+    let vertical_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Fill(1),
+            Constraint::Length(14),
+            Constraint::Fill(1),
+        ])
+        .split(area);
+
+    // On prend la partie du milieu (dans le split) et on la centre horizontalement aussi, et on retourne que le milieu
+    let horizontal_layout = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Fill(1),
+            Constraint::Length(90),
+            Constraint::Fill(1),
+        ])
+        .split(vertical_layout[1]); // Return the middle chunk
+
+    let tutorial_area = centered_rect(30, 40, frame.area());
+    let tutorial_block = Block::bordered()
+        .border_type(BorderType::Rounded)
+        .title(" Tutorial ")
+        .title_alignment(Alignment::Center)
+        .padding(Padding::uniform(1));
+
+    let tutorial_text = Paragraph::new(
+        "Welcome to the Othello game! Here are the basic rules:\n\n\
+        - The game is played on an 8x8 board.\n\
+        - Players take turns placing their discs on the board.\n\
+        - A player can capture opponent's discs by surrounding them.\n\
+        - To play a move, you MUST surround at least one of your opponent's discs.\n\
+        - The game ends when no more moves are possible.\n\
+        - The player with the most discs at the end wins!\n\n\
+        Use the arrow keys to navigate the board, and press Enter to place your disc.",
+    )
+    .block(tutorial_block)
+    .alignment(Alignment::Center);
+
+    frame.render_widget(tutorial_text, horizontal_layout[1]);
 }

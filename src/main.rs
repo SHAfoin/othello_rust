@@ -227,9 +227,15 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                 }
                             }
                         }
+                        KeyCode::Char('t') => {
+                            app.current_screen = CurrentScreen::Tutorial;
+                        }
                         _ => {}
                     },
-                    // CurrentScreen::Tutorial => match key.code {},
+                    CurrentScreen::Tutorial => match key.code {
+                        KeyCode::Char('q') => app.current_screen = CurrentScreen::Game,
+                        _ => {}
+                    },
                     // CurrentScreen::HumanVsAI => match key.code {},
                     // CurrentScreen::AIvsAI => match key.code {},
                     // CurrentScreen::QLearningParameters => match key.code {},
