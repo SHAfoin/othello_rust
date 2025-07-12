@@ -298,7 +298,7 @@ fn widget_history(frame: &mut Frame, app: &App, area: Rect) {
     // Générer l'historique du jeu
     let mut game_history = List::default();
     if let Some(board) = &app.board {
-        let history_items: Vec<ListItem> = board
+        let mut history_items: Vec<ListItem> = board
             .get_history()
             .iter()
             .enumerate()
@@ -333,6 +333,7 @@ fn widget_history(frame: &mut Frame, app: &App, area: Rect) {
                 }
             })
             .collect();
+        history_items.reverse();
         game_history = List::new(history_items);
     }
 
