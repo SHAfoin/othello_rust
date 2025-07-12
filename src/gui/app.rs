@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use ratatui::{crossterm::event::KeyCode, widgets::ListState};
 
 use crate::{
@@ -7,6 +5,7 @@ use crate::{
     game::{
         board::{Board, Player},
         cell::Cell,
+        timer::Timer,
     },
 };
 
@@ -27,7 +26,7 @@ pub struct App {
     pub player_1: Option<Box<dyn Player>>, // Joueur 1, peut être un humain ou une IA.
     pub player_2: Option<Box<dyn Player>>, // Joueur 2, peut
     pub selected_cell: Option<(usize, usize)>, // Cellule sélectionnée par l'utilisateur, si applicable.
-    pub timer: Option<std::time::Instant>,     // Timer pour le jeu, si applicable.
+    pub timer: Option<Timer>,                  // Timer pour le jeu, si applicable.
 }
 
 impl App {
@@ -53,7 +52,7 @@ impl App {
             "It's {} turn !",
             self.board.as_ref().unwrap().get_player_turn()
         ));
-        self.timer = Some(Instant::now());
+        self.timer = Some(Timer::new());
     }
 
     pub fn gui_play_turn(&mut self) {
@@ -85,6 +84,7 @@ impl App {
                         board.add_to_history(history_action);
 
                         if board.check_game_over() {
+                            self.timer.as_mut().unwrap().stop();
                             if let Some(winner) = board.get_winner() {
                                 new_message = Some(format!("Game over! {} is the WINNER!", winner));
                             } else {
