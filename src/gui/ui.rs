@@ -88,57 +88,23 @@ pub fn main_screen(frame: &mut Frame, app: &mut App) {
         .flex(Flex::Center)
         .split(frame.area());
 
-    let big_text = BigText::builder()
-        .alignment(Alignment::Center)
-        .pixel_size(PixelSize::Full)
-        .lines(vec!["Othello".into()])
-        .build();
+    widget_title(frame, app, chunks[1]);
 
-    frame.render_widget(big_text, chunks[1]);
+    widget_menu(frame, app, chunks[2]);
 
-    let items = [
-        "Human vs Human",
-        "Human vs AI",
-        "AI vs AI",
-        "Q-Learning Training",
-    ];
-
-    let middle_layout = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Fill(1),
-            Constraint::Length(40),
-            Constraint::Fill(1),
-        ])
-        .split(chunks[2]);
-
-    let list = List::new(items)
-        .block(
-            Block::bordered()
-                .border_type(BorderType::Rounded)
-                .title("Choose a gamemode")
-                .title_alignment(Alignment::Center)
-                .padding(Padding::uniform(1)),
-        )
-        .highlight_style(Style::new().bg(Color::Yellow).fg(Color::Black))
-        .highlight_symbol(">> ")
-        .repeat_highlight_symbol(true);
-
-    frame.render_stateful_widget(list, middle_layout[1], &mut app.current_mode);
-
-    let footer = footer(
+    footer(
         frame,
         app,
+        chunks[4],
         " (↑↓) to choose / (ENTER) to validate / (q) to quit ",
     );
-    frame.render_widget(footer, chunks[4]);
 }
 
-pub fn footer<'a>(frame: &mut Frame, app: &App, text: &'a str) -> Paragraph<'a> {
+pub fn footer<'a>(frame: &mut Frame, app: &App, area: Rect, text: &'a str) {
     let current_navigation_text =
         Span::styled(text, Style::default().fg(Color::Red)).into_centered_line();
     let mode_footer = Paragraph::new(Line::from(current_navigation_text)).block(Block::default());
-    mode_footer
+    frame.render_widget(mode_footer, area);
 }
 
 pub fn game_screen(frame: &mut Frame, app: &mut App) {
@@ -159,12 +125,65 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
     let right_area = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Percentage(70),
+            Constraint::Fill(1),
+            Constraint::Length(5),
             Constraint::Length(5),
             Constraint::Percentage(30),
         ])
         .split(main_area[1]);
 
+    // Zone des scores
+    let score_area = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+        .split(right_area[3]);
+
+    widget_grid(frame, app, main_area[0]);
+
+    widget_history(frame, app, right_area[0]);
+
+    widget_timer(frame, app, right_area[1]);
+
+    widget_message(frame, app, right_area[2]);
+
+    // Récupérer les scores des joueurs
+    let mut black_score = String::new();
+    let mut white_score = String::new();
+
+    if let Some(board) = &app.board {
+        black_score = board.get_nb_discs(Cell::Black).unwrap().to_string();
+        white_score = board.get_nb_discs(Cell::White).unwrap().to_string();
+    }
+
+    widget_score(frame, app, score_area[0], black_score, Color::Blue, "BLACK");
+
+    widget_score(
+        frame,
+        app,
+        score_area[1],
+        white_score,
+        Color::Yellow,
+        "WHITE",
+    );
+
+    // Footer
+    footer(
+        frame,
+        app,
+        chunks[1],
+        " (↑↓←→) to choose / (ENTER) to play / (q) to quit ",
+    );
+}
+
+pub fn tutorial_screen(frame: &mut Frame, app: &App) {}
+
+pub fn human_vs_ai_screen(frame: &mut Frame, app: &App) {}
+
+pub fn ai_vs_ai_screen(frame: &mut Frame, app: &App) {}
+
+pub fn q_learning_parameters_screen(frame: &mut Frame, app: &App) {}
+
+fn widget_grid(frame: &mut Frame, app: &mut App, area: Rect) {
     // Zone de jeu
     let game_board = Block::bordered()
         .border_type(BorderType::Rounded)
@@ -172,7 +191,7 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
         .title_alignment(Alignment::Center)
         .padding(Padding::uniform(0));
 
-    frame.render_widget(&game_board, main_area[0]);
+    frame.render_widget(&game_board, area);
 
     // Centrer la grille horizontalement
     let game_board_horizontal = Layout::default()
@@ -182,7 +201,7 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
             Constraint::Length(58),
             Constraint::Fill(1),
         ])
-        .split(main_area[0]);
+        .split(area);
 
     // Centrer la grille verticalement
     let game_board_vertical = Layout::default()
@@ -253,7 +272,9 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
     } else {
         app.game_message = Some("No game board available !".to_string());
     }
+}
 
+fn widget_message(frame: &mut Frame, app: &App, area: Rect) {
     // Zone message de jeu
     let game_message = Paragraph::new(app.game_message.clone().unwrap_or("No message".into()))
         .block(
@@ -263,8 +284,10 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
         )
         .alignment(Alignment::Center);
 
-    frame.render_widget(game_message, right_area[1]);
+    frame.render_widget(game_message, area);
+}
 
+fn widget_history(frame: &mut Frame, app: &App, area: Rect) {
     // Zone historique du jeu
     let history_block = Block::bordered()
         .border_type(BorderType::Rounded)
@@ -315,81 +338,94 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
 
     frame.render_stateful_widget(
         game_history.block(history_block),
-        right_area[0],
+        area,
         &mut ListState::default(),
     );
-
-    // Zone des scores
-    let game_score = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(right_area[2]);
-
-    // Récupérer les scores des joueurs
-    let mut black_score = String::new();
-    let mut white_score = String::new();
-
-    if let Some(board) = &app.board {
-        black_score = board.get_nb_discs(Cell::Black).unwrap().to_string();
-        white_score = board.get_nb_discs(Cell::White).unwrap().to_string();
-    }
-
-    // Créer les blocs de score pour chaque joueur
-    let player1_score_block = Block::bordered()
-        .border_type(BorderType::Rounded)
-        .style(Style::default().fg(Color::Blue))
-        .title("BLACK")
-        .title_alignment(Alignment::Center);
-    let player2_score_block = Block::bordered()
-        .border_type(BorderType::Rounded)
-        .style(Style::default().fg(Color::Yellow))
-        .title("WHITE")
-        .title_alignment(Alignment::Center);
-
-    frame.render_widget(player1_score_block, game_score[0]);
-    frame.render_widget(player2_score_block, game_score[1]);
-
-    // Centrer les scores dedans
-    let player1_score_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Fill(1), Constraint::Min(4), Constraint::Fill(1)])
-        .split(game_score[0]);
-    let player2_score_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Fill(1), Constraint::Min(4), Constraint::Fill(1)])
-        .split(game_score[1]);
-
-    // Utiliser BigText pour les scores
-    let player1_score = BigText::builder()
-        .alignment(Alignment::Center)
-        .pixel_size(PixelSize::Quadrant)
-        .style(Style::default().fg(Color::Blue))
-        .lines(vec![format!("{}", black_score).into()])
-        .build();
-
-    let player2_score = BigText::builder()
-        .alignment(Alignment::Center)
-        .pixel_size(PixelSize::Quadrant)
-        .style(Style::default().fg(Color::Yellow))
-        .lines(vec![format!("{}", white_score).into()])
-        .build();
-
-    frame.render_widget(player1_score, player1_score_layout[1]);
-    frame.render_widget(player2_score, player2_score_layout[1]);
-
-    // Footer
-    let footer = footer(
-        frame,
-        app,
-        " (↑↓←→) to choose / (ENTER) to play / (q) to quit ",
-    );
-    frame.render_widget(footer, chunks[1]);
 }
 
-pub fn tutorial_screen(frame: &mut Frame, app: &App) {}
+fn widget_score(frame: &mut Frame, app: &App, area: Rect, score: String, color: Color, name: &str) {
+    let player_score_block = Block::bordered()
+        .border_type(BorderType::Rounded)
+        .style(Style::default().fg(color))
+        .title(name)
+        .title_alignment(Alignment::Center);
 
-pub fn human_vs_ai_screen(frame: &mut Frame, app: &App) {}
+    frame.render_widget(player_score_block, area);
 
-pub fn ai_vs_ai_screen(frame: &mut Frame, app: &App) {}
+    let player_score_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Fill(1), Constraint::Min(4), Constraint::Fill(1)])
+        .split(area);
 
-pub fn q_learning_parameters_screen(frame: &mut Frame, app: &App) {}
+    let player_score = BigText::builder()
+        .alignment(Alignment::Center)
+        .pixel_size(PixelSize::Quadrant)
+        .style(Style::default().fg(color))
+        .lines(vec![format!("{}", score).into()])
+        .build();
+
+    frame.render_widget(player_score, player_score_layout[1]);
+}
+
+fn widget_timer(frame: &mut Frame, app: &App, area: Rect) {
+    if let Some(timer) = &app.timer {
+        let elapsed = timer.elapsed();
+        let minutes = elapsed.as_secs() / 60;
+        let seconds = elapsed.as_secs() % 60;
+
+        let timer_text = format!("{:02}:{:02}", minutes, seconds);
+        let timer_paragraph = Paragraph::new(timer_text)
+            .block(
+                Block::bordered()
+                    .border_type(BorderType::Rounded)
+                    .title("Timer")
+                    .title_alignment(Alignment::Center)
+                    .padding(Padding::vertical(1)),
+            )
+            .alignment(Alignment::Center);
+
+        frame.render_widget(timer_paragraph, area);
+    }
+}
+
+fn widget_title(frame: &mut Frame, app: &App, area: Rect) {
+    let big_text = BigText::builder()
+        .alignment(Alignment::Center)
+        .pixel_size(PixelSize::Full)
+        .lines(vec!["Othello".into()])
+        .build();
+
+    frame.render_widget(big_text, area);
+}
+
+fn widget_menu(frame: &mut Frame, app: &mut App, area: Rect) {
+    let items = [
+        "Human vs Human",
+        "Human vs AI",
+        "AI vs AI",
+        "Q-Learning Training",
+    ];
+
+    let middle_layout = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Fill(1),
+            Constraint::Length(40),
+            Constraint::Fill(1),
+        ])
+        .split(area);
+
+    let list = List::new(items)
+        .block(
+            Block::bordered()
+                .border_type(BorderType::Rounded)
+                .title("Choose a gamemode")
+                .title_alignment(Alignment::Center)
+                .padding(Padding::uniform(1)),
+        )
+        .highlight_style(Style::new().bg(Color::Yellow).fg(Color::Black))
+        .highlight_symbol(">> ")
+        .repeat_highlight_symbol(true);
+
+    frame.render_stateful_widget(list, middle_layout[1], &mut app.current_mode);
+}
