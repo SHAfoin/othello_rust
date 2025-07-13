@@ -2,7 +2,7 @@ use std::{thread, vec};
 
 use crate::{
     ai::common::{AIHeuristicMatrix, AIType, Action, HeuristicType},
-    consts::{MAX_DEPTH, SIZE, ULTRA_THREADING},
+    consts::{MAX_DEPTH, SIZE},
     game::{
         board::{Board, HistoryAction, Player},
         cell::Cell,
@@ -15,7 +15,7 @@ pub struct AIMinMax {
     heuristic: HeuristicType,
     color: Cell,
     matrix: AIHeuristicMatrix,
-    ultra_threading: bool,
+    double_threading: bool,
 }
 
 impl AIMinMax {
@@ -24,14 +24,14 @@ impl AIMinMax {
         heuristic: HeuristicType,
         color: Cell,
         matrix: AIHeuristicMatrix,
-        ultra_threading: bool,
+        double_threading: bool,
     ) -> Self {
         Self {
             depth,
             heuristic,
             color,
             matrix,
-            ultra_threading,
+            double_threading,
         }
     }
 
@@ -58,7 +58,7 @@ impl AIMinMax {
                 .heuristic
                 .evaluate(board, self.get_color(), self.matrix.clone());
             return score;
-        } else if depth == MAX_DEPTH && self.ultra_threading {
+        } else if depth == MAX_DEPTH && self.double_threading {
             let mut handles = vec![];
             for case in board.has_legal_moves(board.get_player_turn()).unwrap() {
                 let mut new_board = board.clone();
@@ -108,11 +108,11 @@ impl Player for AIMinMax {
     fn is_human(&self) -> bool {
         false
     }
-    fn get_ultra_threading(&self) -> bool {
-        self.ultra_threading
+    fn get_double_threading(&self) -> bool {
+        self.double_threading
     }
-    fn set_ultra_threading(&mut self, ultra_threading: bool) {
-        self.ultra_threading = ultra_threading;
+    fn set_double_threading(&mut self, double_threading: bool) {
+        self.double_threading = double_threading;
     }
     fn get_ai_type(&self) -> Option<AIType> {
         Some(AIType::MinMax)

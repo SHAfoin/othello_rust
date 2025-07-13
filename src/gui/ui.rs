@@ -236,6 +236,8 @@ pub fn human_vs_ai_screen(frame: &mut Frame, app: &mut App) {
     widget_title(frame, app, chunks[0]);
 
     let is_qlearning = app.player_2.as_ref().unwrap().get_ai_type().unwrap() == AIType::QLearning;
+    let can_use_double_threading =
+        app.player_1.as_ref().unwrap().get_ai_type().unwrap() == AIType::MinMax;
 
     let items = [
         Span::from(format!(
@@ -280,6 +282,19 @@ pub fn human_vs_ai_screen(frame: &mut Frame, app: &mut App) {
             Style::default()
         }),
         Span::from(format!("{:<50}", "Play")),
+        Span::from(format!(
+            "{:<30}{:>20}",
+            "1 - Double Threading",
+            format!(
+                "< {} >",
+                app.player_1.as_ref().unwrap().get_double_threading()
+            )
+        ))
+        .style(if !can_use_double_threading {
+            Style::default().fg(Color::DarkGray)
+        } else {
+            Style::default()
+        }),
     ];
 
     let layout = centered_rect(60, 10, chunks[1]);
@@ -389,7 +404,7 @@ pub fn ai_vs_ai_screen(frame: &mut Frame, app: &mut App) {
             "1 - Double Threading",
             format!(
                 "< {} >",
-                app.player_1.as_ref().unwrap().get_ultra_threading()
+                app.player_1.as_ref().unwrap().get_double_threading()
             )
         ))
         .style(if !can_use_double_threading_1 {
@@ -443,7 +458,7 @@ pub fn ai_vs_ai_screen(frame: &mut Frame, app: &mut App) {
             "2 - Double Threading",
             format!(
                 "< {} >",
-                app.player_2.as_ref().unwrap().get_ultra_threading()
+                app.player_2.as_ref().unwrap().get_double_threading()
             )
         ))
         .style(if !can_use_double_threading_2 {

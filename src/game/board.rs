@@ -37,10 +37,10 @@ pub trait Player {
     fn get_ai_type(&self) -> Option<AIType> {
         None
     }
-    fn get_ultra_threading(&self) -> bool {
+    fn get_double_threading(&self) -> bool {
         false
     }
-    fn set_ultra_threading(&mut self, _ultra_threading: bool) {}
+    fn set_double_threading(&mut self, _double_threading: bool) {}
 
     fn get_heuristic_matrix(&self) -> AIHeuristicMatrix {
         AIHeuristicMatrix::A

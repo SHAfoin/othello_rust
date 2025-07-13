@@ -2,7 +2,7 @@ use std::thread;
 
 use crate::{
     ai::common::{AIHeuristicMatrix, AIType, Action, HeuristicType},
-    consts::{MAX_DEPTH, SIZE, ULTRA_THREADING},
+    consts::{MAX_DEPTH, SIZE},
     game::{
         board::{Board, HistoryAction, Player},
         cell::Cell,
