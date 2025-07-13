@@ -329,19 +329,96 @@ pub fn ai_vs_ai_screen(frame: &mut Frame, app: &mut App) {
 
     widget_title(frame, app, chunks[0]);
 
+    let is_qlearning_1 = app.player_1.as_ref().unwrap().get_ai_type().unwrap() == AIType::QLearning;
+    let is_qlearning_2 = app.player_2.as_ref().unwrap().get_ai_type().unwrap() == AIType::QLearning;
+
     let items = [
-        format!("{:<30}{:>20}", "AI Type 1", "< MinMax >"),
-        format!("{:<30}{:>20}", "Depth of tree 1", "< 10 >"),
-        format!("{:<30}{:>20}", "Heuristic Type 1", "< Absolute >"),
-        format!("{:<30}{:>20}", "Matrix Heuristic 1", "< A >"),
-        format!("{:<30}{:>20}", "AI Type 2", "< MinMax >"),
-        format!("{:<30}{:>20}", "Depth of tree 2", "< 10 >"),
-        format!("{:<30}{:>20}", "Heuristic Type 2", "< Absolute >"),
-        format!("{:<30}{:>20}", "Matrix Heuristic 2", "< A >"),
-        format!("{:<50}", "Play"),
+        Span::from(format!(
+            "{:<30}{:>20}",
+            "1 - AI Type",
+            format!(
+                "< {} >",
+                app.player_1.as_ref().unwrap().get_ai_type().unwrap()
+            )
+        )),
+        Span::from(format!(
+            "{:<30}{:>20}",
+            "1 - Depth of tree",
+            format!("< {} >", app.player_1.as_ref().unwrap().get_depth())
+        ))
+        .style(if is_qlearning_1 {
+            Style::default().fg(Color::DarkGray)
+        } else {
+            Style::default()
+        }),
+        Span::from(format!(
+            "{:<30}{:>20}",
+            "1 - Heuristic Type",
+            format!("< {} >", app.player_1.as_ref().unwrap().get_heuristic())
+        ))
+        .style(if is_qlearning_1 {
+            Style::default().fg(Color::DarkGray)
+        } else {
+            Style::default()
+        }),
+        Span::from(format!(
+            "{:<30}{:>20}",
+            "1 - Matrix Heuristic",
+            format!(
+                "< {} >",
+                app.player_1.as_ref().unwrap().get_heuristic_matrix()
+            )
+        ))
+        .style(if is_qlearning_1 {
+            Style::default().fg(Color::DarkGray)
+        } else {
+            Style::default()
+        }),
+        Span::from(format!(
+            "{:<30}{:>20}",
+            "2 - AI Type",
+            format!(
+                "< {} >",
+                app.player_2.as_ref().unwrap().get_ai_type().unwrap()
+            )
+        )),
+        Span::from(format!(
+            "{:<30}{:>20}",
+            "2 - Depth of tree",
+            format!("< {} >", app.player_2.as_ref().unwrap().get_depth())
+        ))
+        .style(if is_qlearning_2 {
+            Style::default().fg(Color::DarkGray)
+        } else {
+            Style::default()
+        }),
+        Span::from(format!(
+            "{:<30}{:>20}",
+            "2 - Heuristic Type",
+            format!("< {} >", app.player_2.as_ref().unwrap().get_heuristic())
+        ))
+        .style(if is_qlearning_2 {
+            Style::default().fg(Color::DarkGray)
+        } else {
+            Style::default()
+        }),
+        Span::from(format!(
+            "{:<30}{:>20}",
+            "2 - Matrix Heuristic",
+            format!(
+                "< {} >",
+                app.player_2.as_ref().unwrap().get_heuristic_matrix()
+            )
+        ))
+        .style(if is_qlearning_2 {
+            Style::default().fg(Color::DarkGray)
+        } else {
+            Style::default()
+        }),
+        Span::from(format!("{:<50}", "Play")),
     ];
 
-    let layout = centered_rect(60, 13, chunks[1]);
+    let layout = centered_rect(60, 14, chunks[1]);
 
     let list = List::new(items)
         .block(
@@ -358,7 +435,7 @@ pub fn ai_vs_ai_screen(frame: &mut Frame, app: &mut App) {
     frame.render_stateful_widget(list, layout, &mut app.current_mode);
 
     // Zone de message
-    let error_message = "ayoyooo";
+    let error_message = app.game_message.clone().unwrap_or("".into());
     let error_message_block = Paragraph::new(Span::from(error_message).into_centered_line())
         .yellow()
         .block(Block::default());
