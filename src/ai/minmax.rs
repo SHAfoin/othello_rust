@@ -1,7 +1,7 @@
 use std::{thread, vec};
 
 use crate::{
-    ai::common::{Action, HeuristicType},
+    ai::common::{AIHeuristicMatrix, AIType, Action, HeuristicType},
     consts::{MAX_DEPTH, SIZE, ULTRA_THREADING},
     game::{
         board::{Board, HistoryAction, Player},
@@ -14,7 +14,8 @@ pub struct AIMinMax {
     depth: usize,
     heuristic: HeuristicType,
     color: Cell,
-    matrix: Option<[[isize; SIZE]; SIZE]>, // Assuming a standard 8x8 Othello board
+    matrix: Option<AIHeuristicMatrix>,
+    ultra_threading: bool,
 }
 
 impl AIMinMax {
@@ -22,13 +23,15 @@ impl AIMinMax {
         depth: usize,
         heuristic: HeuristicType,
         color: Cell,
-        matrix: Option<[[isize; SIZE]; SIZE]>,
+        matrix: Option<AIHeuristicMatrix>,
+        ultra_threading: bool,
     ) -> Self {
         Self {
             depth,
             heuristic,
             color,
             matrix,
+            ultra_threading,
         }
     }
 
@@ -53,7 +56,7 @@ impl AIMinMax {
         if depth == 1 || board.has_legal_moves(board.get_player_turn()) == None {
             let score = self
                 .heuristic
-                .evaluate(board, self.get_color(), self.matrix);
+                .evaluate(board, self.get_color(), self.matrix.clone());
             return score;
         } else if depth == MAX_DEPTH && ULTRA_THREADING {
             let mut handles = vec![];
@@ -104,6 +107,39 @@ impl AIMinMax {
 impl Player for AIMinMax {
     fn is_human(&self) -> bool {
         false
+    }
+    fn get_ultra_threading(&self) -> bool {
+        self.ultra_threading
+    }
+    fn set_ultra_threading(&mut self, ultra_threading: bool) {
+        self.ultra_threading = ultra_threading;
+    }
+
+    fn get_ai_type(&self) -> Option<AIType> {
+        Some(AIType::MinMax)
+    }
+    fn get_heuristic_matrix(&self) -> Option<AIHeuristicMatrix> {
+        self.matrix.clone()
+    }
+
+    fn set_heuristic_matrix(&mut self, matrix: AIHeuristicMatrix) {
+        self.matrix = Some(matrix);
+    }
+
+    fn get_heuristic(&self) -> Option<HeuristicType> {
+        Some(self.heuristic.clone())
+    }
+
+    fn set_heuristic(&mut self, heuristic: HeuristicType) {
+        self.heuristic = heuristic;
+    }
+
+    fn get_depth(&self) -> Option<usize> {
+        Some(self.depth)
+    }
+
+    fn set_depth(&mut self, depth: usize) {
+        self.depth = depth;
     }
     fn play_turn(
         &self,

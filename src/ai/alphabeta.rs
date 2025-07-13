@@ -1,7 +1,7 @@
 use std::thread;
 
 use crate::{
-    ai::common::{Action, HeuristicType},
+    ai::common::{AIHeuristicMatrix, AIType, Action, HeuristicType},
     consts::{MAX_DEPTH, SIZE, ULTRA_THREADING},
     game::{
         board::{Board, HistoryAction, Player},
@@ -14,7 +14,7 @@ pub struct AIAlphaBeta {
     depth: usize,
     heuristic: HeuristicType,
     color: Cell,
-    matrix: Option<[[isize; SIZE]; SIZE]>, // Assuming a standard 8x8 Othello board
+    matrix: Option<AIHeuristicMatrix>,
 }
 
 impl AIAlphaBeta {
@@ -22,7 +22,7 @@ impl AIAlphaBeta {
         depth: usize,
         heuristic: HeuristicType,
         color: Cell,
-        matrix: Option<[[isize; SIZE]; SIZE]>,
+        matrix: Option<AIHeuristicMatrix>,
     ) -> Self {
         Self {
             depth,
@@ -47,7 +47,7 @@ impl AIAlphaBeta {
         if depth == 1 || board.has_legal_moves(board.get_player_turn()) == None {
             let score = self
                 .heuristic
-                .evaluate(board, self.get_color(), self.matrix);
+                .evaluate(board, self.get_color(), self.matrix.clone());
             return score;
         } else {
             for case in board.has_legal_moves(board.get_player_turn()).unwrap() {
@@ -92,6 +92,33 @@ impl AIAlphaBeta {
 impl Player for AIAlphaBeta {
     fn is_human(&self) -> bool {
         false
+    }
+
+    fn get_ai_type(&self) -> Option<AIType> {
+        Some(AIType::AlphaBeta)
+    }
+    fn get_heuristic_matrix(&self) -> Option<AIHeuristicMatrix> {
+        self.matrix.clone()
+    }
+
+    fn set_heuristic_matrix(&mut self, matrix: AIHeuristicMatrix) {
+        self.matrix = Some(matrix);
+    }
+
+    fn get_heuristic(&self) -> Option<HeuristicType> {
+        Some(self.heuristic.clone())
+    }
+
+    fn set_heuristic(&mut self, heuristic: HeuristicType) {
+        self.heuristic = heuristic;
+    }
+
+    fn get_depth(&self) -> Option<usize> {
+        Some(self.depth)
+    }
+
+    fn set_depth(&mut self, depth: usize) {
+        self.depth = depth;
     }
     fn play_turn(
         &self,

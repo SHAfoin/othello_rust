@@ -1,5 +1,6 @@
 use std::fmt;
 
+use crate::ai::common::{AIHeuristicMatrix, AIType, HeuristicType};
 use crate::consts::SIZE;
 use crate::game::cell::Cell;
 use crate::gui::app::App;
@@ -32,6 +33,32 @@ pub trait Player {
     ) -> Result<HistoryAction, String>;
 
     fn is_human(&self) -> bool;
+
+    fn get_ai_type(&self) -> Option<AIType> {
+        None
+    }
+    fn get_ultra_threading(&self) -> bool {
+        false
+    }
+    fn set_ultra_threading(&mut self, _ultra_threading: bool) {}
+
+    fn get_heuristic_matrix(&self) -> Option<AIHeuristicMatrix> {
+        None
+    }
+
+    fn set_heuristic_matrix(&mut self, _matrix: AIHeuristicMatrix) {}
+
+    fn get_heuristic(&self) -> Option<HeuristicType> {
+        None
+    }
+
+    fn set_heuristic(&mut self, _heuristic: HeuristicType) {}
+
+    fn get_depth(&self) -> Option<usize> {
+        None
+    }
+
+    fn set_depth(&mut self, _depth: usize) {}
 }
 
 impl Board {

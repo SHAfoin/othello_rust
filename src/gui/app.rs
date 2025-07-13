@@ -14,7 +14,7 @@ pub enum CurrentScreen {
     Game,
     Tutorial,
     HumanVsAI,
-    AIvsAI,
+    AIVsAI,
     QLearningParameters,
     Exit,
 }
@@ -44,11 +44,9 @@ impl App {
         }
     }
 
-    pub fn start_game(&mut self, player_1: Box<dyn Player>, player_2: Box<dyn Player>) {
+    pub fn start_game(&mut self) {
         self.current_screen = CurrentScreen::Game;
         self.board = Some(Board::new());
-        self.player_1 = Some(player_1);
-        self.player_2 = Some(player_2);
         self.game_message = Some(format!(
             "It's {} turn !",
             self.board.as_ref().unwrap().get_player_turn()

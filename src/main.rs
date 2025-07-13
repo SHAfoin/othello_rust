@@ -23,8 +23,13 @@ mod gui;
 mod human;
 
 use crate::{
-    ai::{alphabeta::AIAlphaBeta, common::HeuristicType, minmax::AIMinMax, qlearning::QLearning},
-    consts::{MATRIX_B, MAX_DEPTH},
+    ai::{
+        alphabeta::AIAlphaBeta,
+        common::{AIHeuristicMatrix, AIType, HeuristicType},
+        minmax::AIMinMax,
+        qlearning::QLearning,
+    },
+    consts::MAX_DEPTH,
     game::{
         board::{Board, Player},
         cell::Cell,
@@ -48,7 +53,7 @@ use ratatui::crossterm::terminal::{enable_raw_mode, EnterAlternateScreen};
 use ratatui::prelude::Backend;
 use ratatui::prelude::CrosstermBackend;
 use ratatui::Terminal;
-use std::{error::Error, time::Instant};
+use std::{error::Error, thread::current, time::Instant};
 use std::{io, time::Duration};
 
 pub fn start_game() {
@@ -65,14 +70,15 @@ pub fn start_game() {
         MAX_DEPTH,            // Depth of the search tree
         HeuristicType::Mixte, // Heuristic type to use
         Cell::White,
-        Some(MATRIX_B),
+        Some(AIHeuristicMatrix::B),
     );
 
     let mut qplayer = QLearning::new(
-        1000,                  // Maximum number of steps
-        HeuristicType::Global, // Heuristic type to use
-        10000,                 // Number of epochs
-        Cell::Black,           // Color of the player
+        1000,                       // Maximum number of steps
+        HeuristicType::Global,      // Heuristic type to use
+        Some(AIHeuristicMatrix::A), // Heuristic matrix to use
+        10000,                      // Number of epochs
+        Cell::Black,                // Color of the player
     );
 
     qplayer.import_q_table("foo.txt");
@@ -159,37 +165,42 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                         }
                         KeyCode::Enter => match app.current_mode.selected() {
                             Some(0) => {
-                                app.start_game(
-                                    Box::new(Human::new(Cell::Black)),
-                                    Box::new(Human::new(Cell::White)),
-                                );
+                                app.player_1 = Some(Box::new(Human::new(Cell::Black)));
+                                app.player_2 = Some(Box::new(Human::new(Cell::White)));
+                                app.start_game();
                             }
                             Some(1) => {
-                                app.start_game(
-                                    Box::new(Human::new(Cell::Black)),
-                                    Box::new(AIMinMax::new(
-                                        3,
-                                        HeuristicType::Absolute,
-                                        Cell::White,
-                                        None,
-                                    )),
-                                );
+                                app.player_1 = Some(Box::new(Human::new(Cell::Black)));
+                                app.player_2 = Some(Box::new(AIMinMax::new(
+                                    3,
+                                    HeuristicType::Absolute,
+                                    Cell::White,
+                                    None,
+                                    false,
+                                )));
+
+                                app.current_screen = CurrentScreen::HumanVsAI;
+                                app.current_mode.select_first();
                             }
                             Some(2) => {
-                                app.start_game(
-                                    Box::new(AIAlphaBeta::new(
-                                        MAX_DEPTH,
-                                        HeuristicType::Mixte,
-                                        Cell::Black,
-                                        Some(MATRIX_B),
-                                    )),
-                                    Box::new(AIAlphaBeta::new(
-                                        MAX_DEPTH,
-                                        HeuristicType::Mixte,
-                                        Cell::White,
-                                        Some(MATRIX_B),
-                                    )),
-                                );
+                                // app.start_game(
+                                //     Box::new(AIAlphaBeta::new(
+                                //         MAX_DEPTH,
+                                //         HeuristicType::Mixte,
+                                //         Cell::Black,
+                                //         Some(AIHeuristicMatrix::A),
+                                //         false,
+                                //     )),
+                                //     Box::new(AIAlphaBeta::new(
+                                //         MAX_DEPTH,
+                                //         HeuristicType::Mixte,
+                                //         Cell::White,
+                                //         Some(AIHeuristicMatrix::B),
+                                //         false,
+                                //     )),
+                                // );
+                                app.current_screen = CurrentScreen::AIVsAI;
+                                app.current_mode.select_first();
                             }
                             Some(3) => {
                                 app.current_screen = CurrentScreen::QLearningParameters;
@@ -241,8 +252,186 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                         KeyCode::Char('n') => app.current_screen = CurrentScreen::Game,
                         _ => {}
                     },
-                    // CurrentScreen::HumanVsAI => match key.code {},
-                    // CurrentScreen::AIvsAI => match key.code {},
+                    CurrentScreen::HumanVsAI => match key.code {
+                        KeyCode::Char('q') => {
+                            app.current_mode.select_first();
+                            app.current_screen = CurrentScreen::Main;
+                        }
+
+                        KeyCode::Enter => match app.current_mode.selected() {
+                            Some(4) => {
+                                app.current_screen = CurrentScreen::Game;
+                                app.current_mode.select_first();
+                                app.start_game();
+                            }
+                            _ => {}
+                        },
+
+                        KeyCode::Up => {
+                            app.current_mode.select_previous();
+                        }
+                        KeyCode::Down => {
+                            app.current_mode.select_next();
+                        }
+                        KeyCode::Left => match app.current_mode.selected() {
+                            Some(0) => {
+                                // changer l'IA en gardant les mêmes paramètres, sauf Q learning
+                                match app.player_2.as_mut().unwrap().get_ai_type() {
+                                    Some(AIType::AlphaBeta) => {
+                                        app.player_2 = Some(Box::new(AIMinMax::new(
+                                            app.player_2
+                                                .as_ref()
+                                                .unwrap()
+                                                .get_depth()
+                                                .unwrap_or(MAX_DEPTH),
+                                            app.player_2
+                                                .as_ref()
+                                                .unwrap()
+                                                .get_heuristic()
+                                                .unwrap_or(HeuristicType::Mixte),
+                                            Cell::White,
+                                            app.player_2.as_ref().unwrap().get_heuristic_matrix(),
+                                            false,
+                                        )));
+                                    }
+                                    Some(AIType::MinMax) => {
+                                        app.player_2 = Some(Box::new(QLearning::new(
+                                            1000,
+                                            app.player_2
+                                                .as_ref()
+                                                .unwrap()
+                                                .get_heuristic()
+                                                .unwrap_or(HeuristicType::Mixte),
+                                            app.player_2.as_ref().unwrap().get_heuristic_matrix(),
+                                            10000,
+                                            Cell::White,
+                                        )));
+                                    }
+                                    Some(AIType::QLearning) => {
+                                        app.player_2 = Some(Box::new(AIAlphaBeta::new(
+                                            app.player_2
+                                                .as_ref()
+                                                .unwrap()
+                                                .get_depth()
+                                                .unwrap_or(MAX_DEPTH),
+                                            app.player_2
+                                                .as_ref()
+                                                .unwrap()
+                                                .get_heuristic()
+                                                .unwrap_or(HeuristicType::Mixte),
+                                            Cell::White,
+                                            app.player_2.as_ref().unwrap().get_heuristic_matrix(),
+                                        )));
+                                    }
+                                    _ => {}
+                                }
+                            }
+                            Some(1) => {
+                                // si pas Q learning
+                                // diminuer la depth de 1 si c'est pas inférieur à 1
+                                // sinon : message error, pas adpaté au qlearning
+                            }
+                            Some(2) => {
+                                // si pas Q learning
+                                // heuristique previous
+                                // sinon : message error, pas adpaté au qlearning
+                            }
+                            Some(3) => {
+                                // si l'heuristique le demande && pas Q learning:
+                                // matrice précédente
+                                // sinon : message error, pas adpaté pour cette heuristique
+                                // sinon : message error, pas adpaté au qlearning
+                            }
+                            _ => {}
+                        },
+                        KeyCode::Right => match app.current_mode.selected() {
+                            Some(0) => {
+                                // changer l'IA en gardant les mêmes paramètres, sauf Q learning
+                                match app.player_2.as_mut().unwrap().get_ai_type() {
+                                    Some(AIType::AlphaBeta) => {
+                                        app.player_2 = Some(Box::new(QLearning::new(
+                                            1000,
+                                            app.player_2
+                                                .as_ref()
+                                                .unwrap()
+                                                .get_heuristic()
+                                                .unwrap_or(HeuristicType::Mixte),
+                                            app.player_2.as_ref().unwrap().get_heuristic_matrix(),
+                                            10000,
+                                            Cell::White,
+                                        )));
+                                    }
+                                    Some(AIType::MinMax) => {
+                                        app.player_2 = Some(Box::new(AIAlphaBeta::new(
+                                            app.player_2
+                                                .as_ref()
+                                                .unwrap()
+                                                .get_depth()
+                                                .unwrap_or(MAX_DEPTH),
+                                            app.player_2
+                                                .as_ref()
+                                                .unwrap()
+                                                .get_heuristic()
+                                                .unwrap_or(HeuristicType::Mixte),
+                                            Cell::White,
+                                            app.player_2.as_ref().unwrap().get_heuristic_matrix(),
+                                        )));
+                                    }
+                                    Some(AIType::QLearning) => {
+                                        app.player_2 = Some(Box::new(AIMinMax::new(
+                                            app.player_2
+                                                .as_ref()
+                                                .unwrap()
+                                                .get_depth()
+                                                .unwrap_or(MAX_DEPTH),
+                                            app.player_2
+                                                .as_ref()
+                                                .unwrap()
+                                                .get_heuristic()
+                                                .unwrap_or(HeuristicType::Mixte),
+                                            Cell::White,
+                                            app.player_2.as_ref().unwrap().get_heuristic_matrix(),
+                                            false,
+                                        )));
+                                    }
+                                    _ => {}
+                                }
+                            }
+                            Some(1) => {
+                                // si pas Q learning
+                                // augmenter la depth de 1 si c'est pas supérieur à MAX_DEPTH
+                                // sinon : message error, pas adpaté au qlearning
+                                // sinon : limite par la constante MAX_DEPTH
+                            }
+                            Some(2) => {
+                                // si pas Q learning
+                                // heuristique next
+                                // sinon : message error, pas adpaté au qlearning
+                            }
+                            Some(3) => {
+                                // si l'heuristique le demande && pas Q learning:
+                                // matrice suivante
+                                // sinon : message error, pas adpaté pour cette heuristique
+                                // sinon : message error, pas adpaté au qlearning
+                            }
+                            _ => {}
+                        },
+                        _ => {}
+                    },
+                    CurrentScreen::AIVsAI => match key.code {
+                        KeyCode::Char('q') => {
+                            app.current_mode.select_first();
+                            app.current_screen = CurrentScreen::Main;
+                        }
+
+                        KeyCode::Up => {
+                            app.current_mode.select_previous();
+                        }
+                        KeyCode::Down => {
+                            app.current_mode.select_next();
+                        }
+                        _ => {}
+                    },
                     // CurrentScreen::QLearningParameters => match key.code {},
                     _ => return Ok(()),
                 }

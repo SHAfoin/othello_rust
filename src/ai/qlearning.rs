@@ -2,8 +2,8 @@ use rand::{random_range, rng, Rng};
 use std::{collections::HashMap, fs::File, hash::Hash, io::Write};
 
 use crate::{
-    ai::common::HeuristicType,
-    consts::{EPSILON, GAMMA, LAMBDA_LEARN, MATRIX_A, SIZE},
+    ai::common::{AIHeuristicMatrix, AIType, HeuristicType},
+    consts::{EPSILON, GAMMA, LAMBDA_LEARN, SIZE},
     game::{
         board::{Board, HistoryAction, Player},
         cell::Cell,
@@ -14,17 +14,25 @@ pub struct QLearning {
     max_step: usize,
     q_table: HashMap<String, HashMap<String, isize>>,
     heuristic: HeuristicType,
+    matrix: Option<AIHeuristicMatrix>,
     epoch: usize,
     epsilon: f64,
     color: Cell,
 }
 
 impl QLearning {
-    pub fn new(max_step: usize, heuristic: HeuristicType, epoch: usize, color: Cell) -> Self {
+    pub fn new(
+        max_step: usize,
+        heuristic: HeuristicType,
+        matrix: Option<AIHeuristicMatrix>,
+        epoch: usize,
+        color: Cell,
+    ) -> Self {
         Self {
             max_step: max_step,
             q_table: HashMap::new(),
             heuristic,
+            matrix,
             epoch: epoch,
             epsilon: EPSILON,
             color: color, // Default color, can be changed later
@@ -91,7 +99,7 @@ impl QLearning {
                 // mettre à jour la q_table avec la formule de Q-learning
                 let mut r =
                     self.heuristic
-                        .evaluate(&board, board.get_player_turn(), Some(MATRIX_A));
+                        .evaluate(&board, board.get_player_turn(), self.matrix.clone());
 
                 if board.check_game_over() {
                     let winner = board.get_winner();
@@ -192,6 +200,9 @@ impl QLearning {
 impl Player for QLearning {
     fn is_human(&self) -> bool {
         false
+    }
+    fn get_ai_type(&self) -> Option<AIType> {
+        Some(AIType::QLearning)
     }
     fn play_turn(
         &self,

@@ -66,7 +66,7 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
         CurrentScreen::HumanVsAI => {
             human_vs_ai_screen(frame, app);
         }
-        CurrentScreen::AIvsAI => {
+        CurrentScreen::AIVsAI => {
             ai_vs_ai_screen(frame, app);
         }
         CurrentScreen::QLearningParameters => {
@@ -204,7 +204,7 @@ pub fn game_screen(frame: &mut Frame, app: &mut App) {
     );
 }
 
-pub fn tutorial_screen(frame: &mut Frame, app: &App) {
+pub fn tutorial_screen(frame: &mut Frame, app: &mut App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Fill(1), Constraint::Length(1)])
@@ -220,9 +220,126 @@ pub fn tutorial_screen(frame: &mut Frame, app: &App) {
     footer(frame, app, chunks[1], "(q) to resume game ");
 }
 
-pub fn human_vs_ai_screen(frame: &mut Frame, app: &App) {}
+pub fn human_vs_ai_screen(frame: &mut Frame, app: &mut App) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(8),
+            Constraint::Fill(1),
+            Constraint::Length(1),
+            Constraint::Length(1),
+        ])
+        .flex(Flex::Center)
+        .split(frame.area());
 
-pub fn ai_vs_ai_screen(frame: &mut Frame, app: &App) {}
+    widget_title(frame, app, chunks[0]);
+
+    let items = [
+        format!(
+            "{:<30}{:>20}",
+            "AI Type",
+            format!(
+                "< {} >",
+                app.player_2.as_ref().unwrap().get_ai_type().unwrap()
+            )
+        ),
+        format!("{:<30}{:>20}", "Depth of tree", "< 10 >"),
+        format!("{:<30}{:>20}", "Heuristic Type", "< Absolute >"),
+        format!("{:<30}{:>20}", "Matrix Heuristic", "< A >"),
+        format!("{:<50}", "Play"),
+    ];
+
+    let layout = centered_rect(60, 10, chunks[1]);
+
+    let list = List::new(items)
+        .block(
+            Block::bordered()
+                .border_type(BorderType::Rounded)
+                .title(" AI parameters ")
+                .title_alignment(Alignment::Center)
+                .padding(Padding::uniform(1)),
+        )
+        .highlight_style(Style::new().bg(Color::Yellow).fg(Color::Black))
+        .highlight_symbol(">> ")
+        .repeat_highlight_symbol(true);
+
+    frame.render_stateful_widget(list, layout, &mut app.current_mode);
+
+    // Zone de message
+    let error_message = "ayoyooo";
+    let error_message_block = Paragraph::new(Span::from(error_message).into_centered_line())
+        .yellow()
+        .block(Block::default());
+
+    frame.render_widget(error_message_block, chunks[2]);
+
+    // Footer
+    footer(
+        frame,
+        app,
+        chunks[3],
+        " (↑↓←→) to choose / (ENTER) to validate / (q) to return to main menu ",
+    );
+}
+
+pub fn ai_vs_ai_screen(frame: &mut Frame, app: &mut App) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(8),
+            Constraint::Fill(1),
+            Constraint::Length(1),
+            Constraint::Length(1),
+        ])
+        .flex(Flex::Center)
+        .split(frame.area());
+
+    widget_title(frame, app, chunks[0]);
+
+    let items = [
+        format!("{:<30}{:>20}", "AI Type 1", "< MinMax >"),
+        format!("{:<30}{:>20}", "Depth of tree 1", "< 10 >"),
+        format!("{:<30}{:>20}", "Heuristic Type 1", "< Absolute >"),
+        format!("{:<30}{:>20}", "Matrix Heuristic 1", "< A >"),
+        format!("{:<30}{:>20}", "AI Type 2", "< MinMax >"),
+        format!("{:<30}{:>20}", "Depth of tree 2", "< 10 >"),
+        format!("{:<30}{:>20}", "Heuristic Type 2", "< Absolute >"),
+        format!("{:<30}{:>20}", "Matrix Heuristic 2", "< A >"),
+        format!("{:<50}", "Play"),
+    ];
+
+    let layout = centered_rect(60, 13, chunks[1]);
+
+    let list = List::new(items)
+        .block(
+            Block::bordered()
+                .border_type(BorderType::Rounded)
+                .title(" AI parameters ")
+                .title_alignment(Alignment::Center)
+                .padding(Padding::uniform(1)),
+        )
+        .highlight_style(Style::new().bg(Color::Yellow).fg(Color::Black))
+        .highlight_symbol(">> ")
+        .repeat_highlight_symbol(true);
+
+    frame.render_stateful_widget(list, layout, &mut app.current_mode);
+
+    // Zone de message
+    let error_message = "ayoyooo";
+    let error_message_block = Paragraph::new(Span::from(error_message).into_centered_line())
+        .yellow()
+        .block(Block::default());
+
+    frame.render_widget(error_message_block, chunks[2]);
+
+    // Footer
+    footer(
+        frame,
+        app,
+        chunks[3],
+        " (↑↓←→) to choose / (ENTER) to validate / (q) to return to main menu ",
+    );
+}
 
 pub fn q_learning_parameters_screen(frame: &mut Frame, app: &App) {}
 
