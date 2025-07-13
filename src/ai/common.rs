@@ -9,6 +9,15 @@ pub enum AIHeuristicMatrix {
     B,
 }
 
+impl Display for AIHeuristicMatrix {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AIHeuristicMatrix::A => write!(f, "Matrix A"),
+            AIHeuristicMatrix::B => write!(f, "Matrix B"),
+        }
+    }
+}
+
 impl AIHeuristicMatrix {
     pub fn value(&self) -> [[isize; SIZE]; SIZE] {
         match self {
@@ -50,7 +59,7 @@ impl AIHeuristicMatrix {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum AIType {
     AlphaBeta,
     MinMax,
@@ -92,7 +101,7 @@ pub struct Action {
     pub score: isize,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum HeuristicType {
     Absolute,
     Matrix,
@@ -114,21 +123,16 @@ impl Display for HeuristicType {
 }
 
 impl HeuristicType {
-    pub fn evaluate(
-        &self,
-        board: &Board,
-        player: Cell,
-        matrix: Option<AIHeuristicMatrix>,
-    ) -> isize {
+    pub fn evaluate(&self, board: &Board, player: Cell, matrix: AIHeuristicMatrix) -> isize {
         match self {
             HeuristicType::Absolute => heuristic_absolute(board, player),
-            HeuristicType::Matrix => heuristic_matrix(board, player, &matrix.unwrap()),
+            HeuristicType::Matrix => heuristic_matrix(board, player, &matrix),
             HeuristicType::Mobility => heuristic_mobility(board, player),
-            HeuristicType::Mixte => heuristic_mixte(board, player, &matrix.unwrap()),
+            HeuristicType::Mixte => heuristic_mixte(board, player, &matrix),
             HeuristicType::Global => {
                 // Global heuristic combines all heuristics
                 heuristic_absolute(board, player)
-                    + heuristic_matrix(board, player, &matrix.unwrap())
+                    + heuristic_matrix(board, player, &matrix)
                     + heuristic_mobility(board, player)
             }
         }

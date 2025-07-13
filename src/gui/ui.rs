@@ -1,7 +1,7 @@
 use ratatui::{
     crossterm::terminal,
     layout::{Alignment, Constraint, Direction, Flex, Layout, Rect},
-    style::{Color, Style, Stylize},
+    style::{Color, Style, Styled, Stylize},
     text::{Line, Span},
     widgets::{
         Block, BorderType, Borders, Clear, List, ListItem, ListState, Padding, Paragraph, Widget,
@@ -11,6 +11,7 @@ use ratatui::{
 use tui_big_text::{BigText, PixelSize};
 
 use crate::{
+    ai::common::{AIType, HeuristicType},
     consts::SIZE,
     game::board,
     gui::app::{App, CurrentScreen},
@@ -234,19 +235,51 @@ pub fn human_vs_ai_screen(frame: &mut Frame, app: &mut App) {
 
     widget_title(frame, app, chunks[0]);
 
+    let is_qlearning = app.player_2.as_ref().unwrap().get_ai_type().unwrap() == AIType::QLearning;
+
     let items = [
-        format!(
+        Span::from(format!(
             "{:<30}{:>20}",
             "AI Type",
             format!(
                 "< {} >",
                 app.player_2.as_ref().unwrap().get_ai_type().unwrap()
             )
-        ),
-        format!("{:<30}{:>20}", "Depth of tree", "< 10 >"),
-        format!("{:<30}{:>20}", "Heuristic Type", "< Absolute >"),
-        format!("{:<30}{:>20}", "Matrix Heuristic", "< A >"),
-        format!("{:<50}", "Play"),
+        )),
+        Span::from(format!(
+            "{:<30}{:>20}",
+            "Depth of tree",
+            format!("< {} >", app.player_2.as_ref().unwrap().get_depth())
+        ))
+        .style(if is_qlearning {
+            Style::default().fg(Color::DarkGray)
+        } else {
+            Style::default()
+        }),
+        Span::from(format!(
+            "{:<30}{:>20}",
+            "Heuristic Type",
+            format!("< {} >", app.player_2.as_ref().unwrap().get_heuristic())
+        ))
+        .style(if is_qlearning {
+            Style::default().fg(Color::DarkGray)
+        } else {
+            Style::default()
+        }),
+        Span::from(format!(
+            "{:<30}{:>20}",
+            "Matrix Heuristic",
+            format!(
+                "< {} >",
+                app.player_2.as_ref().unwrap().get_heuristic_matrix()
+            )
+        ))
+        .style(if is_qlearning {
+            Style::default().fg(Color::DarkGray)
+        } else {
+            Style::default()
+        }),
+        Span::from(format!("{:<50}", "Play")),
     ];
 
     let layout = centered_rect(60, 10, chunks[1]);
@@ -266,7 +299,7 @@ pub fn human_vs_ai_screen(frame: &mut Frame, app: &mut App) {
     frame.render_stateful_widget(list, layout, &mut app.current_mode);
 
     // Zone de message
-    let error_message = "ayoyooo";
+    let error_message = app.game_message.clone().unwrap_or("".into());
     let error_message_block = Paragraph::new(Span::from(error_message).into_centered_line())
         .yellow()
         .block(Block::default());

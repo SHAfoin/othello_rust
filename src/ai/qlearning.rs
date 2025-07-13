@@ -14,7 +14,7 @@ pub struct QLearning {
     max_step: usize,
     q_table: HashMap<String, HashMap<String, isize>>,
     heuristic: HeuristicType,
-    matrix: Option<AIHeuristicMatrix>,
+    matrix: AIHeuristicMatrix,
     epoch: usize,
     epsilon: f64,
     color: Cell,
@@ -24,7 +24,7 @@ impl QLearning {
     pub fn new(
         max_step: usize,
         heuristic: HeuristicType,
-        matrix: Option<AIHeuristicMatrix>,
+        matrix: AIHeuristicMatrix,
         epoch: usize,
         color: Cell,
     ) -> Self {
@@ -203,6 +203,21 @@ impl Player for QLearning {
     }
     fn get_ai_type(&self) -> Option<AIType> {
         Some(AIType::QLearning)
+    }
+    fn get_heuristic_matrix(&self) -> AIHeuristicMatrix {
+        self.matrix.clone()
+    }
+
+    fn set_heuristic_matrix(&mut self, matrix: AIHeuristicMatrix) {
+        self.matrix = matrix;
+    }
+
+    fn get_heuristic(&self) -> HeuristicType {
+        self.heuristic.clone()
+    }
+
+    fn set_heuristic(&mut self, heuristic: HeuristicType) {
+        self.heuristic = heuristic;
     }
     fn play_turn(
         &self,

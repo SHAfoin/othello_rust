@@ -14,7 +14,7 @@ pub struct AIMinMax {
     depth: usize,
     heuristic: HeuristicType,
     color: Cell,
-    matrix: Option<AIHeuristicMatrix>,
+    matrix: AIHeuristicMatrix,
     ultra_threading: bool,
 }
 
@@ -23,7 +23,7 @@ impl AIMinMax {
         depth: usize,
         heuristic: HeuristicType,
         color: Cell,
-        matrix: Option<AIHeuristicMatrix>,
+        matrix: AIHeuristicMatrix,
         ultra_threading: bool,
     ) -> Self {
         Self {
@@ -118,24 +118,24 @@ impl Player for AIMinMax {
     fn get_ai_type(&self) -> Option<AIType> {
         Some(AIType::MinMax)
     }
-    fn get_heuristic_matrix(&self) -> Option<AIHeuristicMatrix> {
+    fn get_heuristic_matrix(&self) -> AIHeuristicMatrix {
         self.matrix.clone()
     }
 
     fn set_heuristic_matrix(&mut self, matrix: AIHeuristicMatrix) {
-        self.matrix = Some(matrix);
+        self.matrix = matrix;
     }
 
-    fn get_heuristic(&self) -> Option<HeuristicType> {
-        Some(self.heuristic.clone())
+    fn get_heuristic(&self) -> HeuristicType {
+        self.heuristic.clone()
     }
 
     fn set_heuristic(&mut self, heuristic: HeuristicType) {
         self.heuristic = heuristic;
     }
 
-    fn get_depth(&self) -> Option<usize> {
-        Some(self.depth)
+    fn get_depth(&self) -> usize {
+        self.depth
     }
 
     fn set_depth(&mut self, depth: usize) {

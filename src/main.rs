@@ -70,15 +70,15 @@ pub fn start_game() {
         MAX_DEPTH,            // Depth of the search tree
         HeuristicType::Mixte, // Heuristic type to use
         Cell::White,
-        Some(AIHeuristicMatrix::B),
+        AIHeuristicMatrix::B,
     );
 
     let mut qplayer = QLearning::new(
-        1000,                       // Maximum number of steps
-        HeuristicType::Global,      // Heuristic type to use
-        Some(AIHeuristicMatrix::A), // Heuristic matrix to use
-        10000,                      // Number of epochs
-        Cell::Black,                // Color of the player
+        1000,                  // Maximum number of steps
+        HeuristicType::Global, // Heuristic type to use
+        AIHeuristicMatrix::A,  // Heuristic matrix to use
+        10000,                 // Number of epochs
+        Cell::Black,           // Color of the player
     );
 
     qplayer.import_q_table("foo.txt");
@@ -175,7 +175,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                     3,
                                     HeuristicType::Absolute,
                                     Cell::White,
-                                    None,
+                                    AIHeuristicMatrix::A,
                                     false,
                                 )));
 
@@ -279,16 +279,8 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                 match app.player_2.as_mut().unwrap().get_ai_type() {
                                     Some(AIType::AlphaBeta) => {
                                         app.player_2 = Some(Box::new(AIMinMax::new(
-                                            app.player_2
-                                                .as_ref()
-                                                .unwrap()
-                                                .get_depth()
-                                                .unwrap_or(MAX_DEPTH),
-                                            app.player_2
-                                                .as_ref()
-                                                .unwrap()
-                                                .get_heuristic()
-                                                .unwrap_or(HeuristicType::Mixte),
+                                            app.player_2.as_ref().unwrap().get_depth(),
+                                            app.player_2.as_ref().unwrap().get_heuristic(),
                                             Cell::White,
                                             app.player_2.as_ref().unwrap().get_heuristic_matrix(),
                                             false,
@@ -297,11 +289,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                     Some(AIType::MinMax) => {
                                         app.player_2 = Some(Box::new(QLearning::new(
                                             1000,
-                                            app.player_2
-                                                .as_ref()
-                                                .unwrap()
-                                                .get_heuristic()
-                                                .unwrap_or(HeuristicType::Mixte),
+                                            app.player_2.as_ref().unwrap().get_heuristic(),
                                             app.player_2.as_ref().unwrap().get_heuristic_matrix(),
                                             10000,
                                             Cell::White,
@@ -309,16 +297,8 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                     }
                                     Some(AIType::QLearning) => {
                                         app.player_2 = Some(Box::new(AIAlphaBeta::new(
-                                            app.player_2
-                                                .as_ref()
-                                                .unwrap()
-                                                .get_depth()
-                                                .unwrap_or(MAX_DEPTH),
-                                            app.player_2
-                                                .as_ref()
-                                                .unwrap()
-                                                .get_heuristic()
-                                                .unwrap_or(HeuristicType::Mixte),
+                                            app.player_2.as_ref().unwrap().get_depth(),
+                                            app.player_2.as_ref().unwrap().get_heuristic(),
                                             Cell::White,
                                             app.player_2.as_ref().unwrap().get_heuristic_matrix(),
                                         )));
@@ -327,20 +307,68 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                 }
                             }
                             Some(1) => {
-                                // si pas Q learning
-                                // diminuer la depth de 1 si c'est pas inférieur à 1
-                                // sinon : message error, pas adpaté au qlearning
+                                if app.player_2.as_ref().unwrap().get_ai_type().unwrap()
+                                    != AIType::QLearning
+                                {
+                                    if app.player_2.as_ref().unwrap().get_depth() > 1 {
+                                        let current_depth =
+                                            app.player_2.as_ref().unwrap().get_depth();
+                                        app.player_2.as_mut().unwrap().set_depth(current_depth - 1);
+                                    }
+                                } else {
+                                    app.set_game_message(Some(
+                                        "QLearning does not support depth change".to_string(),
+                                    ));
+                                }
                             }
                             Some(2) => {
-                                // si pas Q learning
-                                // heuristique previous
-                                // sinon : message error, pas adpaté au qlearning
+                                if app.player_2.as_ref().unwrap().get_ai_type().unwrap()
+                                    != AIType::QLearning
+                                {
+                                    let previous_heuristic =
+                                        app.player_2.as_ref().unwrap().get_heuristic().previous();
+                                    app.player_2
+                                        .as_mut()
+                                        .unwrap()
+                                        .set_heuristic(previous_heuristic);
+                                } else {
+                                    app.set_game_message(Some(
+                                        "QLearning does not support heuristic change".to_string(),
+                                    ));
+                                }
                             }
                             Some(3) => {
-                                // si l'heuristique le demande && pas Q learning:
-                                // matrice précédente
-                                // sinon : message error, pas adpaté pour cette heuristique
-                                // sinon : message error, pas adpaté au qlearning
+                                if app.player_2.as_ref().unwrap().get_ai_type().unwrap()
+                                    != AIType::QLearning
+                                {
+                                    if app.player_2.as_ref().unwrap().get_heuristic()
+                                        == HeuristicType::Absolute
+                                        || app.player_2.as_ref().unwrap().get_heuristic()
+                                            == HeuristicType::Mobility
+                                    {
+                                        app.set_game_message(Some(
+                                            "This heuristic do not support heuristic matrix change"
+                                                .to_string(),
+                                        ));
+                                        continue;
+                                    } else {
+                                        let previous_matrix = app
+                                            .player_2
+                                            .as_ref()
+                                            .unwrap()
+                                            .get_heuristic_matrix()
+                                            .previous();
+                                        app.player_2
+                                            .as_mut()
+                                            .unwrap()
+                                            .set_heuristic_matrix(previous_matrix);
+                                    }
+                                } else {
+                                    app.set_game_message(Some(
+                                        "QLearning does not support heuristic matrix change"
+                                            .to_string(),
+                                    ));
+                                }
                             }
                             _ => {}
                         },
@@ -351,11 +379,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                     Some(AIType::AlphaBeta) => {
                                         app.player_2 = Some(Box::new(QLearning::new(
                                             1000,
-                                            app.player_2
-                                                .as_ref()
-                                                .unwrap()
-                                                .get_heuristic()
-                                                .unwrap_or(HeuristicType::Mixte),
+                                            app.player_2.as_ref().unwrap().get_heuristic(),
                                             app.player_2.as_ref().unwrap().get_heuristic_matrix(),
                                             10000,
                                             Cell::White,
@@ -363,32 +387,16 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                     }
                                     Some(AIType::MinMax) => {
                                         app.player_2 = Some(Box::new(AIAlphaBeta::new(
-                                            app.player_2
-                                                .as_ref()
-                                                .unwrap()
-                                                .get_depth()
-                                                .unwrap_or(MAX_DEPTH),
-                                            app.player_2
-                                                .as_ref()
-                                                .unwrap()
-                                                .get_heuristic()
-                                                .unwrap_or(HeuristicType::Mixte),
+                                            app.player_2.as_ref().unwrap().get_depth(),
+                                            app.player_2.as_ref().unwrap().get_heuristic(),
                                             Cell::White,
                                             app.player_2.as_ref().unwrap().get_heuristic_matrix(),
                                         )));
                                     }
                                     Some(AIType::QLearning) => {
                                         app.player_2 = Some(Box::new(AIMinMax::new(
-                                            app.player_2
-                                                .as_ref()
-                                                .unwrap()
-                                                .get_depth()
-                                                .unwrap_or(MAX_DEPTH),
-                                            app.player_2
-                                                .as_ref()
-                                                .unwrap()
-                                                .get_heuristic()
-                                                .unwrap_or(HeuristicType::Mixte),
+                                            app.player_2.as_ref().unwrap().get_depth(),
+                                            app.player_2.as_ref().unwrap().get_heuristic(),
                                             Cell::White,
                                             app.player_2.as_ref().unwrap().get_heuristic_matrix(),
                                             false,
@@ -398,21 +406,70 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                 }
                             }
                             Some(1) => {
-                                // si pas Q learning
-                                // augmenter la depth de 1 si c'est pas supérieur à MAX_DEPTH
-                                // sinon : message error, pas adpaté au qlearning
-                                // sinon : limite par la constante MAX_DEPTH
+                                if app.player_2.as_ref().unwrap().get_ai_type().unwrap()
+                                    != AIType::QLearning
+                                {
+                                    if app.player_2.as_ref().unwrap().get_depth() < MAX_DEPTH {
+                                        let current_depth =
+                                            app.player_2.as_ref().unwrap().get_depth();
+                                        app.player_2.as_mut().unwrap().set_depth(current_depth + 1);
+                                    } else {
+                                        app.set_game_message(Some(
+                                            "Maximum depth reached [see const MAX_DEPTH]"
+                                                .to_string(),
+                                        ));
+                                    }
+                                } else {
+                                    app.set_game_message(Some(
+                                        "QLearning does not support depth change".to_string(),
+                                    ));
+                                }
                             }
                             Some(2) => {
-                                // si pas Q learning
-                                // heuristique next
-                                // sinon : message error, pas adpaté au qlearning
+                                if app.player_2.as_ref().unwrap().get_ai_type().unwrap()
+                                    != AIType::QLearning
+                                {
+                                    let next_heuristic =
+                                        app.player_2.as_ref().unwrap().get_heuristic().next();
+                                    app.player_2.as_mut().unwrap().set_heuristic(next_heuristic);
+                                } else {
+                                    app.set_game_message(Some(
+                                        "QLearning does not support heuristic change".to_string(),
+                                    ));
+                                }
                             }
                             Some(3) => {
-                                // si l'heuristique le demande && pas Q learning:
-                                // matrice suivante
-                                // sinon : message error, pas adpaté pour cette heuristique
-                                // sinon : message error, pas adpaté au qlearning
+                                if app.player_2.as_ref().unwrap().get_ai_type().unwrap()
+                                    != AIType::QLearning
+                                {
+                                    if app.player_2.as_ref().unwrap().get_heuristic()
+                                        == HeuristicType::Absolute
+                                        || app.player_2.as_ref().unwrap().get_heuristic()
+                                            == HeuristicType::Mobility
+                                    {
+                                        app.set_game_message(Some(
+                                            "This heuristic do not support heuristic matrix change"
+                                                .to_string(),
+                                        ));
+                                        continue;
+                                    } else {
+                                        let next_matrix = app
+                                            .player_2
+                                            .as_ref()
+                                            .unwrap()
+                                            .get_heuristic_matrix()
+                                            .next();
+                                        app.player_2
+                                            .as_mut()
+                                            .unwrap()
+                                            .set_heuristic_matrix(next_matrix);
+                                    }
+                                } else {
+                                    app.set_game_message(Some(
+                                        "QLearning does not support heuristic matrix change"
+                                            .to_string(),
+                                    ));
+                                }
                             }
                             _ => {}
                         },

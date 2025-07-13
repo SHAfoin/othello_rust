@@ -42,20 +42,20 @@ pub trait Player {
     }
     fn set_ultra_threading(&mut self, _ultra_threading: bool) {}
 
-    fn get_heuristic_matrix(&self) -> Option<AIHeuristicMatrix> {
-        None
+    fn get_heuristic_matrix(&self) -> AIHeuristicMatrix {
+        AIHeuristicMatrix::A
     }
 
     fn set_heuristic_matrix(&mut self, _matrix: AIHeuristicMatrix) {}
 
-    fn get_heuristic(&self) -> Option<HeuristicType> {
-        None
+    fn get_heuristic(&self) -> HeuristicType {
+        HeuristicType::Absolute
     }
 
     fn set_heuristic(&mut self, _heuristic: HeuristicType) {}
 
-    fn get_depth(&self) -> Option<usize> {
-        None
+    fn get_depth(&self) -> usize {
+        1
     }
 
     fn set_depth(&mut self, _depth: usize) {}
