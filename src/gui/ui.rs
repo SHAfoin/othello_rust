@@ -331,6 +331,16 @@ pub fn ai_vs_ai_screen(frame: &mut Frame, app: &mut App) {
 
     let is_qlearning_1 = app.player_1.as_ref().unwrap().get_ai_type().unwrap() == AIType::QLearning;
     let is_qlearning_2 = app.player_2.as_ref().unwrap().get_ai_type().unwrap() == AIType::QLearning;
+    let heuristic_dont_use_matrix_1 = app.player_1.as_ref().unwrap().get_heuristic()
+        == HeuristicType::Absolute
+        || app.player_1.as_ref().unwrap().get_heuristic() == HeuristicType::Mobility;
+    let heuristic_dont_use_matrix_2 = app.player_2.as_ref().unwrap().get_heuristic()
+        == HeuristicType::Absolute
+        || app.player_2.as_ref().unwrap().get_heuristic() == HeuristicType::Mobility;
+    let can_use_double_threading_1 =
+        app.player_1.as_ref().unwrap().get_ai_type().unwrap() == AIType::MinMax;
+    let can_use_double_threading_2 =
+        app.player_2.as_ref().unwrap().get_ai_type().unwrap() == AIType::MinMax;
 
     let items = [
         Span::from(format!(
@@ -369,7 +379,20 @@ pub fn ai_vs_ai_screen(frame: &mut Frame, app: &mut App) {
                 app.player_1.as_ref().unwrap().get_heuristic_matrix()
             )
         ))
-        .style(if is_qlearning_1 {
+        .style(if is_qlearning_1 || heuristic_dont_use_matrix_1 {
+            Style::default().fg(Color::DarkGray)
+        } else {
+            Style::default()
+        }),
+        Span::from(format!(
+            "{:<30}{:>20}",
+            "1 - Double Threading",
+            format!(
+                "< {} >",
+                app.player_1.as_ref().unwrap().get_ultra_threading()
+            )
+        ))
+        .style(if !can_use_double_threading_1 {
             Style::default().fg(Color::DarkGray)
         } else {
             Style::default()
@@ -410,7 +433,20 @@ pub fn ai_vs_ai_screen(frame: &mut Frame, app: &mut App) {
                 app.player_2.as_ref().unwrap().get_heuristic_matrix()
             )
         ))
-        .style(if is_qlearning_2 {
+        .style(if is_qlearning_2 || heuristic_dont_use_matrix_2 {
+            Style::default().fg(Color::DarkGray)
+        } else {
+            Style::default()
+        }),
+        Span::from(format!(
+            "{:<30}{:>20}",
+            "2 - Double Threading",
+            format!(
+                "< {} >",
+                app.player_2.as_ref().unwrap().get_ultra_threading()
+            )
+        ))
+        .style(if !can_use_double_threading_2 {
             Style::default().fg(Color::DarkGray)
         } else {
             Style::default()

@@ -58,7 +58,7 @@ impl AIMinMax {
                 .heuristic
                 .evaluate(board, self.get_color(), self.matrix.clone());
             return score;
-        } else if depth == MAX_DEPTH && ULTRA_THREADING {
+        } else if depth == MAX_DEPTH && self.ultra_threading {
             let mut handles = vec![];
             for case in board.has_legal_moves(board.get_player_turn()).unwrap() {
                 let mut new_board = board.clone();
@@ -114,7 +114,6 @@ impl Player for AIMinMax {
     fn set_ultra_threading(&mut self, ultra_threading: bool) {
         self.ultra_threading = ultra_threading;
     }
-
     fn get_ai_type(&self) -> Option<AIType> {
         Some(AIType::MinMax)
     }

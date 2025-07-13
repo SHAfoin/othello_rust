@@ -478,7 +478,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                         }
 
                         KeyCode::Enter => match app.current_mode.selected() {
-                            Some(8) => {
+                            Some(10) => {
                                 app.current_screen = CurrentScreen::Game;
                                 app.current_mode.select_first();
                                 app.start_game();
@@ -502,7 +502,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                             app.player_1.as_ref().unwrap().get_heuristic(),
                                             Cell::Black,
                                             app.player_1.as_ref().unwrap().get_heuristic_matrix(),
-                                            false,
+                                            app.player_1.as_ref().unwrap().get_ultra_threading(),
                                         )));
                                     }
                                     Some(AIType::MinMax) => {
@@ -590,6 +590,22 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                 }
                             }
                             Some(4) => {
+                                if app.player_1.as_ref().unwrap().get_ai_type().unwrap()
+                                    == AIType::MinMax
+                                {
+                                    let previous_double_threading =
+                                        app.player_1.as_ref().unwrap().get_ultra_threading();
+                                    app.player_1
+                                        .as_mut()
+                                        .unwrap()
+                                        .set_ultra_threading(!previous_double_threading);
+                                } else {
+                                    app.set_game_message(Some(
+                                        "Only MinMax AI can use double threading".to_string(),
+                                    ));
+                                }
+                            }
+                            Some(5) => {
                                 // changer l'IA en gardant les mêmes paramètres, sauf Q learning
                                 match app.player_2.as_mut().unwrap().get_ai_type() {
                                     Some(AIType::AlphaBeta) => {
@@ -598,7 +614,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                             app.player_2.as_ref().unwrap().get_heuristic(),
                                             Cell::White,
                                             app.player_2.as_ref().unwrap().get_heuristic_matrix(),
-                                            false,
+                                            app.player_2.as_ref().unwrap().get_ultra_threading(),
                                         )));
                                     }
                                     Some(AIType::MinMax) => {
@@ -621,7 +637,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                     _ => {}
                                 }
                             }
-                            Some(5) => {
+                            Some(6) => {
                                 if app.player_2.as_ref().unwrap().get_ai_type().unwrap()
                                     != AIType::QLearning
                                 {
@@ -636,7 +652,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                     ));
                                 }
                             }
-                            Some(6) => {
+                            Some(7) => {
                                 if app.player_2.as_ref().unwrap().get_ai_type().unwrap()
                                     != AIType::QLearning
                                 {
@@ -652,7 +668,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                     ));
                                 }
                             }
-                            Some(7) => {
+                            Some(8) => {
                                 if app.player_2.as_ref().unwrap().get_ai_type().unwrap()
                                     != AIType::QLearning
                                 {
@@ -685,6 +701,22 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                     ));
                                 }
                             }
+                            Some(9) => {
+                                if app.player_2.as_ref().unwrap().get_ai_type().unwrap()
+                                    == AIType::MinMax
+                                {
+                                    let previous_double_threading =
+                                        app.player_2.as_ref().unwrap().get_ultra_threading();
+                                    app.player_2
+                                        .as_mut()
+                                        .unwrap()
+                                        .set_ultra_threading(!previous_double_threading);
+                                } else {
+                                    app.set_game_message(Some(
+                                        "Only MinMax AI can use double threading".to_string(),
+                                    ));
+                                }
+                            }
                             _ => {}
                         },
                         KeyCode::Right => match app.current_mode.selected() {
@@ -714,7 +746,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                             app.player_1.as_ref().unwrap().get_heuristic(),
                                             Cell::Black,
                                             app.player_1.as_ref().unwrap().get_heuristic_matrix(),
-                                            false,
+                                            app.player_1.as_ref().unwrap().get_ultra_threading(),
                                         )));
                                     }
                                     _ => {}
@@ -786,8 +818,24 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                     ));
                                 }
                             }
-
                             Some(4) => {
+                                if app.player_1.as_ref().unwrap().get_ai_type().unwrap()
+                                    == AIType::MinMax
+                                {
+                                    let previous_double_threading =
+                                        app.player_1.as_ref().unwrap().get_ultra_threading();
+                                    app.player_1
+                                        .as_mut()
+                                        .unwrap()
+                                        .set_ultra_threading(!previous_double_threading);
+                                } else {
+                                    app.set_game_message(Some(
+                                        "Only MinMax AI can use double threading".to_string(),
+                                    ));
+                                }
+                            }
+
+                            Some(5) => {
                                 // changer l'IA en gardant les mêmes paramètres, sauf Q learning
                                 match app.player_2.as_mut().unwrap().get_ai_type() {
                                     Some(AIType::AlphaBeta) => {
@@ -819,7 +867,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                     _ => {}
                                 }
                             }
-                            Some(5) => {
+                            Some(6) => {
                                 if app.player_2.as_ref().unwrap().get_ai_type().unwrap()
                                     != AIType::QLearning
                                 {
@@ -839,7 +887,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                     ));
                                 }
                             }
-                            Some(6) => {
+                            Some(7) => {
                                 if app.player_2.as_ref().unwrap().get_ai_type().unwrap()
                                     != AIType::QLearning
                                 {
@@ -852,7 +900,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                     ));
                                 }
                             }
-                            Some(7) => {
+                            Some(8) => {
                                 if app.player_2.as_ref().unwrap().get_ai_type().unwrap()
                                     != AIType::QLearning
                                 {
@@ -882,6 +930,22 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                                     app.set_game_message(Some(
                                         "QLearning does not support heuristic matrix change"
                                             .to_string(),
+                                    ));
+                                }
+                            }
+                            Some(9) => {
+                                if app.player_2.as_ref().unwrap().get_ai_type().unwrap()
+                                    == AIType::MinMax
+                                {
+                                    let previous_double_threading =
+                                        app.player_2.as_ref().unwrap().get_ultra_threading();
+                                    app.player_2
+                                        .as_mut()
+                                        .unwrap()
+                                        .set_ultra_threading(!previous_double_threading);
+                                } else {
+                                    app.set_game_message(Some(
+                                        "Only MinMax AI can use double threading".to_string(),
                                     ));
                                 }
                             }
