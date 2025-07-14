@@ -32,6 +32,10 @@ pub trait Player {
         cell: Option<(usize, usize)>,
     ) -> Result<HistoryAction, String>;
 
+    fn import_q_table_file(&mut self, q_table: &str) -> Result<(), String> {
+        Err("Importing Q-table is not supported for this player type".to_string())
+    }
+
     fn is_human(&self) -> bool;
 
     fn get_ai_type(&self) -> Option<AIType> {

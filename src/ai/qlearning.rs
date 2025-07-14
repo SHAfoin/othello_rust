@@ -171,16 +171,16 @@ impl QLearning {
         self.export_q_table("q_table.json");
     }
 
-    pub fn import_q_table(mut self, file_path: &str) -> Result<Self, String> {
+    pub fn import_q_table(&mut self, file_path: &str) -> Result<(), String> {
         match File::open(file_path) {
             Ok(file) => match serde_json::from_reader(file) {
                 Ok(q_table) => {
                     self.q_table = q_table;
-                    Ok(self)
+                    Ok(())
                 }
                 Err(e) => Err(format!("Could not deserialize Q-table: {}", e)),
             },
-            Err(e) => return Err(format!("Could not open file: {}", e)),
+            Err(e) => Err(e.to_string()),
         }
     }
 
@@ -200,6 +200,12 @@ impl QLearning {
 impl Player for QLearning {
     fn is_human(&self) -> bool {
         false
+    }
+    fn import_q_table_file(&mut self, q_table: &str) -> Result<(), String> {
+        match self.import_q_table(q_table) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(format!("Failed to import Q-table {}: {}", q_table, &e)),
+        }
     }
     fn get_ai_type(&self) -> Option<AIType> {
         Some(AIType::QLearning)

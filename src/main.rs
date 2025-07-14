@@ -251,14 +251,37 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     CurrentScreen::HumanVsAI => match key.code {
                         KeyCode::Char('q') => {
                             app.current_mode.select_first();
+                            app.game_message = None;
                             app.current_screen = CurrentScreen::Main;
                         }
 
                         KeyCode::Enter => match app.current_mode.selected() {
                             Some(5) => {
-                                app.current_screen = CurrentScreen::Game;
-                                app.current_mode.select_first();
-                                app.start_game();
+                                let mut game_ready = false;
+
+                                if app.player_2.as_ref().unwrap().get_ai_type().unwrap()
+                                    == AIType::QLearning
+                                {
+                                    match app
+                                        .player_2
+                                        .as_mut()
+                                        .unwrap()
+                                        .import_q_table_file("q_table_player_2.json")
+                                    {
+                                        Ok(_) => {
+                                            game_ready = true;
+                                        }
+                                        Err(e) => {
+                                            game_ready = false;
+                                            app.set_game_message(Some(e));
+                                        }
+                                    }
+                                }
+                                if game_ready {
+                                    app.current_screen = CurrentScreen::Game;
+                                    app.current_mode.select_first();
+                                    app.start_game();
+                                }
                             }
                             _ => {}
                         },
@@ -506,14 +529,54 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     CurrentScreen::AIVsAI => match key.code {
                         KeyCode::Char('q') => {
                             app.current_mode.select_first();
+                            app.game_message = None;
                             app.current_screen = CurrentScreen::Main;
                         }
 
                         KeyCode::Enter => match app.current_mode.selected() {
                             Some(10) => {
-                                app.current_screen = CurrentScreen::Game;
-                                app.current_mode.select_first();
-                                app.start_game();
+                                let mut game_ready = false;
+                                if app.player_1.as_ref().unwrap().get_ai_type().unwrap()
+                                    == AIType::QLearning
+                                {
+                                    match app
+                                        .player_1
+                                        .as_mut()
+                                        .unwrap()
+                                        .import_q_table_file("q_table_player_1.json")
+                                    {
+                                        Ok(_) => {
+                                            game_ready = true;
+                                        }
+                                        Err(e) => {
+                                            game_ready = false;
+                                            app.set_game_message(Some(e));
+                                        }
+                                    }
+                                }
+                                if app.player_2.as_ref().unwrap().get_ai_type().unwrap()
+                                    == AIType::QLearning
+                                {
+                                    match app
+                                        .player_2
+                                        .as_mut()
+                                        .unwrap()
+                                        .import_q_table_file("q_table_player_2.json")
+                                    {
+                                        Ok(_) => {
+                                            game_ready = true;
+                                        }
+                                        Err(e) => {
+                                            game_ready = false;
+                                            app.set_game_message(Some(e));
+                                        }
+                                    }
+                                }
+                                if game_ready {
+                                    app.current_screen = CurrentScreen::Game;
+                                    app.current_mode.select_first();
+                                    app.start_game();
+                                }
                             }
                             _ => {}
                         },
