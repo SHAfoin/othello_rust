@@ -39,6 +39,38 @@ impl QLearning {
         }
     }
 
+    pub fn get_epochs(&self) -> usize {
+        self.epoch
+    }
+
+    pub fn set_epochs(&mut self, epoch: usize) {
+        self.epoch = epoch;
+    }
+
+    pub fn get_max_step(&self) -> usize {
+        self.max_step
+    }
+
+    pub fn set_max_step(&mut self, max_step: usize) {
+        self.max_step = max_step;
+    }
+
+    pub fn get_heuristic(&self) -> HeuristicType {
+        self.heuristic.clone()
+    }
+
+    pub fn set_heuristic(&mut self, heuristic: HeuristicType) {
+        self.heuristic = heuristic;
+    }
+
+    pub fn get_matrix(&self) -> AIHeuristicMatrix {
+        self.matrix.clone()
+    }
+
+    pub fn set_matrix(&mut self, matrix: AIHeuristicMatrix) {
+        self.matrix = matrix;
+    }
+
     pub fn get_q_table(&self) -> &HashMap<String, HashMap<String, isize>> {
         &self.q_table
     }

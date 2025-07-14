@@ -5,6 +5,7 @@ pub const MAX_DEPTH: usize = 5; // Maximum depth for the AI search algorithms
 pub const LAMBDA_LEARN: f64 = 0.8; // Learning rate for Q-learning
 pub const GAMMA: f64 = 0.99; // Discount factor for future rewards
 pub const EPSILON: f64 = 1.0; // INITIAL Exploration rate for epsilon-greedy strategy
+pub const QLEARNING_MAX_EPOCHS: usize = 10000;
 
 #[cfg(test)]
 mod tests {

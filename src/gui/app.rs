@@ -1,6 +1,7 @@
 use ratatui::{crossterm::event::KeyCode, widgets::ListState};
 
 use crate::{
+    ai::qlearning::QLearning,
     consts::SIZE,
     game::{
         board::{Board, Player},
@@ -28,6 +29,7 @@ pub struct App {
     pub player_2: Option<Box<dyn Player>>, // Joueur 2, peut
     pub selected_cell: Option<(usize, usize)>, // Cellule sélectionnée par l'utilisateur, si applicable.
     pub timer: Option<Timer>,                  // Timer pour le jeu, si applicable.
+    pub qlearning_parameters: Option<QLearning>, // Paramètres pour l'entraînement QLearning.
 }
 
 impl App {
@@ -37,10 +39,11 @@ impl App {
             current_mode: ListState::default().with_selected(Some(0)), // Sélectionner le premier élément par défaut
             board: None,
             game_message: None,
-            player_1: None,      // Initialiser sans joueur
-            player_2: None,      // Initialiser sans joueur
-            selected_cell: None, // Aucune cellule sélectionnée par défaut
-            timer: None,         // Pas de timer initialement
+            player_1: None,             // Initialiser sans joueur
+            player_2: None,             // Initialiser sans joueur
+            selected_cell: None,        // Aucune cellule sélectionnée par défaut
+            timer: None,                // Pas de timer initialement
+            qlearning_parameters: None, // Pas de paramètres QLearning initialement
         }
     }
 
