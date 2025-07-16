@@ -1,10 +1,4 @@
-use crate::{
-    game::{
-        board::{Board, HistoryAction, Player},
-        cell::Cell,
-    },
-    gui::app::App,
-};
+use crate::game::{board::Board, cell::Cell, history_action::HistoryAction, player::Player};
 
 pub struct Human {
     color: Cell,
@@ -65,7 +59,7 @@ impl Player for Human {
         &self,
         board: &mut Board,
         cell: Option<(usize, usize)>,
-    ) -> Result<(HistoryAction), String> {
+    ) -> Result<HistoryAction, String> {
         if let Some((row, col)) = cell {
             match board.try_play_move(row, col, self.get_color()) {
                 Ok(gained_discs) => Ok(HistoryAction {

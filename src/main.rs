@@ -25,7 +25,7 @@ mod human;
 use crate::{
     ai::{
         alphabeta::AIAlphaBeta,
-        common::{AIHeuristicMatrix, AIType, HeuristicType},
+        heuristic::{AIHeuristicMatrix, AIType, HeuristicType},
         minmax::AIMinMax,
         qlearning::QLearning,
     },
@@ -36,6 +36,7 @@ use crate::{
     },
     gui::{
         app::{self, App, CurrentScreen},
+        control::main::main_control,
         ui::ui,
     },
     human::Human,
@@ -155,64 +156,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                 }
                 // Gestion selon l'écran actuel
                 match app.current_screen {
-                    CurrentScreen::Main => match key.code {
-                        KeyCode::Char('q') => return Ok(()),
-                        KeyCode::Up => {
-                            app.current_mode.select_previous();
-                        }
-                        KeyCode::Down => {
-                            app.current_mode.select_next();
-                        }
-                        KeyCode::Enter => match app.current_mode.selected() {
-                            Some(0) => {
-                                app.player_1 = Some(Box::new(Human::new(Cell::Black)));
-                                app.player_2 = Some(Box::new(Human::new(Cell::White)));
-                                app.start_game();
-                            }
-                            Some(1) => {
-                                app.player_1 = Some(Box::new(Human::new(Cell::Black)));
-                                app.player_2 = Some(Box::new(AIMinMax::new(
-                                    3,
-                                    HeuristicType::Absolute,
-                                    Cell::White,
-                                    AIHeuristicMatrix::A,
-                                    false,
-                                )));
-
-                                app.current_screen = CurrentScreen::HumanVsAI;
-                                app.current_mode.select_first();
-                            }
-                            Some(2) => {
-                                app.player_1 = Some(Box::new(AIAlphaBeta::new(
-                                    MAX_DEPTH,
-                                    HeuristicType::Mixte,
-                                    Cell::Black,
-                                    AIHeuristicMatrix::A,
-                                )));
-                                app.player_2 = Some(Box::new(AIAlphaBeta::new(
-                                    MAX_DEPTH,
-                                    HeuristicType::Mixte,
-                                    Cell::White,
-                                    AIHeuristicMatrix::B,
-                                )));
-                                app.current_screen = CurrentScreen::AIVsAI;
-                                app.current_mode.select_first();
-                            }
-                            Some(3) => {
-                                app.current_screen = CurrentScreen::QLearningParameters;
-                                app.qlearning_parameters = Some(QLearning::new(
-                                    64,
-                                    HeuristicType::Global,
-                                    AIHeuristicMatrix::A,
-                                    10000,
-                                    Cell::Black,
-                                ));
-                                app.current_mode.select_first();
-                            }
-                            _ => {}
-                        },
-                        _ => {}
-                    },
+                    CurrentScreen::Main => main_control(app, key),
                     CurrentScreen::Game => match key.code {
                         KeyCode::Char('q') => app.current_screen = CurrentScreen::Exit,
                         KeyCode::Up => {

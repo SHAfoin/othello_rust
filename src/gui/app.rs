@@ -1,13 +1,9 @@
 use ratatui::{crossterm::event::KeyCode, widgets::ListState};
 
 use crate::{
-    ai::qlearning::QLearning,
+    ai::algo::qlearning::QLearning,
     consts::SIZE,
-    game::{
-        board::{Board, Player},
-        cell::Cell,
-        timer::Timer,
-    },
+    game::{board::Board, cell::Cell, player::Player, timer::Timer},
 };
 
 pub enum CurrentScreen {

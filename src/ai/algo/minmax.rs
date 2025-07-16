@@ -1,34 +1,37 @@
-use std::thread;
+use std::{thread, vec};
 
 use crate::{
-    ai::common::{AIHeuristicMatrix, AIType, Action, HeuristicType},
-    consts::{MAX_DEPTH, SIZE},
-    game::{
-        board::{Board, HistoryAction, Player},
-        cell::Cell,
+    ai::{
+        action::Action, ai_type::AIType, heuristic::HeuristicType,
+        heuristic_matrix::AIHeuristicMatrix,
     },
+    consts::MAX_DEPTH,
+    game::{board::Board, cell::Cell, history_action::HistoryAction, player::Player},
 };
 
 #[derive(Clone, Debug)]
-pub struct AIAlphaBeta {
+pub struct AIMinMax {
     depth: usize,
     heuristic: HeuristicType,
     color: Cell,
     matrix: AIHeuristicMatrix,
+    double_threading: bool,
 }
 
-impl AIAlphaBeta {
+impl AIMinMax {
     pub fn new(
         depth: usize,
         heuristic: HeuristicType,
         color: Cell,
         matrix: AIHeuristicMatrix,
+        double_threading: bool,
     ) -> Self {
         Self {
             depth,
             heuristic,
             color,
             matrix,
+            double_threading,
         }
     }
 
@@ -37,65 +40,82 @@ impl AIAlphaBeta {
     }
 
     pub fn init_tree(&self, board: &Board, depth: usize) -> isize {
-        self.tree_step(board, depth, &isize::MIN, &isize::MAX)
+        self.tree_step(board, depth)
     }
 
-    pub fn tree_step(&self, board: &Board, depth: usize, alpha: &isize, beta: &isize) -> isize {
-        let mut alpha_mut = alpha.clone();
-        let mut beta_mut = beta.clone();
-
+    pub fn tree_step(&self, board: &Board, depth: usize) -> isize {
+        let comparation_function: fn(isize, isize) -> isize;
+        let mut best_score;
+        if depth % 2 == 0 {
+            comparation_function = isize::max;
+            best_score = isize::MIN;
+        } else {
+            comparation_function = isize::min;
+            best_score = isize::MAX;
+        }
         if depth == 1 || board.has_legal_moves(board.get_player_turn()) == None {
             let score = self
                 .heuristic
                 .evaluate(board, self.get_color(), self.matrix.clone());
             return score;
-        } else {
+        } else if depth == MAX_DEPTH && self.double_threading {
+            let mut handles = vec![];
             for case in board.has_legal_moves(board.get_player_turn()).unwrap() {
                 let mut new_board = board.clone();
                 match new_board.try_play_move(case.0, case.1, board.get_player_turn()) {
                     Ok(_) => {
-                        let score = self.tree_step(&new_board, depth - 1, &alpha_mut, &beta_mut);
-                        if depth % 2 == 1 {
-                            // je suis sur min
-                            if score < beta_mut {
-                                beta_mut = score
-                            }
-                            if alpha_mut >= beta_mut {
-                                return beta_mut;
-                            }
-                        } else {
-                            // je suis sur max
-                            if score > alpha_mut {
-                                alpha_mut = score
-                            }
-                            if alpha_mut >= beta_mut {
-                                return alpha_mut;
-                            }
-                        }
+                        let ai_cloned = self.clone();
+                        let handle =
+                            thread::spawn(move || ai_cloned.tree_step(&new_board, depth - 1));
+                        handles.push(handle);
                     }
                     Err(e) => {
                         println!("Error: {}", e);
                     }
                 }
             }
-            if depth % 2 == 1 {
-                // je suis sur min
-                return beta_mut;
-            } else {
-                // je suis sur max
-                return alpha_mut;
+
+            for handle in handles {
+                match handle.join() {
+                    Ok(score) => {
+                        best_score = comparation_function(best_score, score);
+                    }
+                    Err(_) => {
+                        println!("Thread panicked");
+                    }
+                }
             }
+            best_score
+        } else {
+            for case in board.has_legal_moves(board.get_player_turn()).unwrap() {
+                let mut new_board = board.clone();
+                match new_board.try_play_move(case.0, case.1, board.get_player_turn()) {
+                    Ok(_) => {
+                        let score = self.tree_step(&new_board, depth - 1);
+                        best_score = comparation_function(best_score, score);
+                    }
+                    Err(e) => {
+                        println!("Error: {}", e);
+                    }
+                }
+            }
+            best_score
         }
     }
 }
 
-impl Player for AIAlphaBeta {
+impl Player for AIMinMax {
     fn is_human(&self) -> bool {
         false
     }
-
+    fn get_double_threading(&self) -> bool {
+        self.double_threading
+    }
+    fn set_double_threading(&mut self, double_threading: bool) {
+        self.double_threading = double_threading;
+    }
     fn get_ai_type(&self) -> Option<AIType> {
-        Some(AIType::AlphaBeta)
+        Some(AIType::MinMax)
     }
     fn get_heuristic_matrix(&self) -> AIHeuristicMatrix {
         self.matrix.clone()
@@ -124,7 +144,7 @@ impl Player for AIAlphaBeta {
         &self,
         board: &mut Board,
         cell: Option<(usize, usize)>,
-    ) -> Result<(HistoryAction), String> {
+    ) -> Result<HistoryAction, String> {
         let mut best_action = Action {
             pos: (0, 0),
             score: isize::MIN,
@@ -142,7 +162,9 @@ impl Player for AIAlphaBeta {
                     });
                     handles.push(handle);
                 }
-                Err(e) => return Err(format!("Error: {}", e)),
+                Err(e) => {
+                    return Err(format!("Error: {}", e));
+                }
             }
         }
 

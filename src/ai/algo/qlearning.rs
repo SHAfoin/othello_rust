@@ -1,13 +1,10 @@
-use rand::{random_range, rng, Rng};
+use rand::{rng, Rng};
 use std::{collections::HashMap, fs::File, hash::Hash, io::Write};
 
 use crate::{
-    ai::common::{AIHeuristicMatrix, AIType, HeuristicType},
-    consts::{EPSILON, GAMMA, LAMBDA_LEARN, SIZE},
-    game::{
-        board::{Board, HistoryAction, Player},
-        cell::Cell,
-    },
+    ai::{ai_type::AIType, heuristic::HeuristicType, heuristic_matrix::AIHeuristicMatrix},
+    consts::{EPSILON, GAMMA, LAMBDA_LEARN},
+    game::{board::Board, cell::Cell, history_action::HistoryAction, player::Player},
 };
 
 pub struct QLearning {
@@ -261,7 +258,7 @@ impl Player for QLearning {
         &self,
         board: &mut Board,
         cell: Option<(usize, usize)>,
-    ) -> Result<(HistoryAction), String> {
+    ) -> Result<HistoryAction, String> {
         let mut actions = board.has_legal_moves(board.get_player_turn()).unwrap();
         // choisir l'action avec la valeur q la plus élevée
         let mut best_action = None;

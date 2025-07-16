@@ -1,5 +1,5 @@
-pub mod alphabeta;
-pub mod common;
-pub mod minmax;
-pub mod parameters;
-pub mod qlearning;
+pub mod action;
+pub mod ai_type;
+pub mod algo;
+pub mod heuristic;
+pub mod heuristic_matrix;

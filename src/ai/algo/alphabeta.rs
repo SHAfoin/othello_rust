@@ -1,37 +1,33 @@
-use std::{thread, vec};
+use std::thread;
 
 use crate::{
-    ai::common::{AIHeuristicMatrix, AIType, Action, HeuristicType},
-    consts::{MAX_DEPTH, SIZE},
-    game::{
-        board::{Board, HistoryAction, Player},
-        cell::Cell,
+    ai::{
+        action::Action, ai_type::AIType, heuristic::HeuristicType,
+        heuristic_matrix::AIHeuristicMatrix,
     },
+    game::{board::Board, cell::Cell, history_action::HistoryAction, player::Player},
 };
 
 #[derive(Clone, Debug)]
-pub struct AIMinMax {
+pub struct AIAlphaBeta {
     depth: usize,
     heuristic: HeuristicType,
     color: Cell,
     matrix: AIHeuristicMatrix,
-    double_threading: bool,
 }
 
-impl AIMinMax {
+impl AIAlphaBeta {
     pub fn new(
         depth: usize,
         heuristic: HeuristicType,
         color: Cell,
         matrix: AIHeuristicMatrix,
-        double_threading: bool,
     ) -> Self {
         Self {
             depth,
             heuristic,
             color,
             matrix,
-            double_threading,
         }
     }
 
@@ -40,82 +36,65 @@ impl AIMinMax {
     }
 
     pub fn init_tree(&self, board: &Board, depth: usize) -> isize {
-        self.tree_step(board, depth)
+        self.tree_step(board, depth, &isize::MIN, &isize::MAX)
     }
 
-    pub fn tree_step(&self, board: &Board, depth: usize) -> isize {
-        let comparation_function: fn(isize, isize) -> isize;
-        let mut best_score;
-        if depth % 2 == 0 {
-            comparation_function = isize::max;
-            best_score = isize::MIN;
-        } else {
-            comparation_function = isize::min;
-            best_score = isize::MAX;
-        }
+    pub fn tree_step(&self, board: &Board, depth: usize, alpha: &isize, beta: &isize) -> isize {
+        let mut alpha_mut = alpha.clone();
+        let mut beta_mut = beta.clone();
+
         if depth == 1 || board.has_legal_moves(board.get_player_turn()) == None {
             let score = self
                 .heuristic
                 .evaluate(board, self.get_color(), self.matrix.clone());
             return score;
-        } else if depth == MAX_DEPTH && self.double_threading {
-            let mut handles = vec![];
-            for case in board.has_legal_moves(board.get_player_turn()).unwrap() {
-                let mut new_board = board.clone();
-                match new_board.try_play_move(case.0, case.1, board.get_player_turn()) {
-                    Ok(_) => {
-                        let ai_cloned = self.clone();
-                        let handle =
-                            thread::spawn(move || ai_cloned.tree_step(&new_board, depth - 1));
-                        handles.push(handle);
-                    }
-                    Err(e) => {
-                        println!("Error: {}", e);
-                    }
-                }
-            }
-
-            for handle in handles {
-                match handle.join() {
-                    Ok(score) => {
-                        best_score = comparation_function(best_score, score);
-                    }
-                    Err(_) => {
-                        println!("Thread panicked");
-                    }
-                }
-            }
-            best_score
         } else {
             for case in board.has_legal_moves(board.get_player_turn()).unwrap() {
                 let mut new_board = board.clone();
                 match new_board.try_play_move(case.0, case.1, board.get_player_turn()) {
                     Ok(_) => {
-                        let score = self.tree_step(&new_board, depth - 1);
-                        best_score = comparation_function(best_score, score);
+                        let score = self.tree_step(&new_board, depth - 1, &alpha_mut, &beta_mut);
+                        if depth % 2 == 1 {
+                            // je suis sur min
+                            if score < beta_mut {
+                                beta_mut = score
+                            }
+                            if alpha_mut >= beta_mut {
+                                return beta_mut;
+                            }
+                        } else {
+                            // je suis sur max
+                            if score > alpha_mut {
+                                alpha_mut = score
+                            }
+                            if alpha_mut >= beta_mut {
+                                return alpha_mut;
+                            }
+                        }
                     }
                     Err(e) => {
                         println!("Error: {}", e);
                     }
                 }
             }
-            best_score
+            if depth % 2 == 1 {
+                // je suis sur min
+                return beta_mut;
+            } else {
+                // je suis sur max
+                return alpha_mut;
+            }
         }
     }
 }
 
-impl Player for AIMinMax {
+impl Player for AIAlphaBeta {
     fn is_human(&self) -> bool {
         false
     }
-    fn get_double_threading(&self) -> bool {
-        self.double_threading
-    }
-    fn set_double_threading(&mut self, double_threading: bool) {
-        self.double_threading = double_threading;
-    }
+
     fn get_ai_type(&self) -> Option<AIType> {
-        Some(AIType::MinMax)
+        Some(AIType::AlphaBeta)
     }
     fn get_heuristic_matrix(&self) -> AIHeuristicMatrix {
         self.matrix.clone()
@@ -144,7 +123,7 @@ impl Player for AIMinMax {
         &self,
         board: &mut Board,
         cell: Option<(usize, usize)>,
-    ) -> Result<(HistoryAction), String> {
+    ) -> Result<HistoryAction, String> {
         let mut best_action = Action {
             pos: (0, 0),
             score: isize::MIN,
@@ -162,9 +141,7 @@ impl Player for AIMinMax {
                     });
                     handles.push(handle);
                 }
-                Err(e) => {
-                    return Err(format!("Error: {}", e));
-                }
+                Err(e) => return Err(format!("Error: {}", e)),
             }
         }
 
