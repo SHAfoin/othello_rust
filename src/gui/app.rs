@@ -49,6 +49,7 @@ use crate::{
 /// app.current_screen = CurrentScreen::Game;
 /// // UI will now render the game screen
 /// ```
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CurrentScreen {
     Main,
     Game,
@@ -114,6 +115,11 @@ pub struct App {
     /// Controls which UI components are rendered and determines
     /// the available user interactions and navigation options.
     pub current_screen: CurrentScreen,
+
+    /// Previous screen before the current one.
+    ///
+    /// Used for navigation history and returning to the last screen.
+    pub previous_screen: Option<CurrentScreen>,
 
     /// Current selection state for list-based UI components.
     ///
@@ -216,6 +222,7 @@ impl App {
             qlearning_parameters: None, // Pas de paramètres QLearning initialement
             qlearning_loading: None,
             qlearning_channel: None, // Pas de canal QLearning initialement
+            previous_screen: None,
         }
     }
 

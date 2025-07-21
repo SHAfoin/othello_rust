@@ -5,7 +5,7 @@ use crate::gui::app::{App, CurrentScreen};
 pub fn exit_control(app: &mut App, key: KeyEvent) {
     match key.code {
         KeyCode::Char('y') | KeyCode::Char('q') => app.quit_game(),
-        KeyCode::Char('n') => app.current_screen = CurrentScreen::Game,
+        KeyCode::Char('n') => app.current_screen = (*app.previous_screen.as_ref().unwrap()).clone(),
         _ => {}
     }
 }

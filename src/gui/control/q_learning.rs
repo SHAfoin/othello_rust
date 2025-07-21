@@ -137,6 +137,7 @@ pub fn q_learning_parameters_control(app: &mut App, key: KeyEvent) {
         KeyCode::Enter => match app.current_mode.selected() {
             Some(4) => {
                 app.current_screen = CurrentScreen::QLearningLoading;
+                app.previous_screen = Some(CurrentScreen::QLearningParameters);
                 let (tx, rx) = mpsc::channel();
                 let mut qlearning_params = app.qlearning_parameters.take().unwrap();
                 std::thread::spawn(move || {

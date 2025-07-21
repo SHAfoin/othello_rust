@@ -56,6 +56,7 @@ pub fn ai_vs_ai_control(app: &mut App, key: KeyEvent) {
                 }
                 if game_ready {
                     app.current_screen = CurrentScreen::Game;
+                    app.previous_screen = Some(CurrentScreen::AIVsAI);
                     app.current_mode.select_first();
                     app.start_game();
                 }
