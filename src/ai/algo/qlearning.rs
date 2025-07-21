@@ -347,13 +347,13 @@ impl QLearning {
             self.set_epsilon(self.get_epsilon() * 0.999);
 
             // Send progress update to the channel
-            if let Err(e) = tx.send(i as f64 / self.epoch as f64) {
+            if let Err(e) = tx.send(i as f64 / (self.epoch - 1) as f64) {
                 eprintln!("Error sending training progress: {}", e);
                 break;
             }
         }
         // Export the learned Q-table for future use
-        self.export_q_table("q_table.json");
+        self.export_q_table("q_table_player_1.json");
     }
 
     /// Imports a Q-table from a JSON file.
