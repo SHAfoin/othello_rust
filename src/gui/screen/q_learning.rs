@@ -157,7 +157,7 @@ pub fn q_learning_parameters_screen(frame: &mut Frame, app: &mut App) {
         Span::from(format!("{:<50}", "Start training")),
     ];
 
-    let layout = centered_rect(60, 8, chunks[1]);
+    let layout = centered_rect(60, 9, chunks[1]);
 
     let list = List::new(items)
         .block(

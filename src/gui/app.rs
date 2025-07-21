@@ -56,6 +56,7 @@ pub enum CurrentScreen {
     HumanVsAI,
     AIVsAI,
     QLearningParameters,
+    QLearningLoading,
     Exit,
 }
 
@@ -168,6 +169,10 @@ pub struct App {
     /// including epoch count, learning rates, and heuristic settings.
     /// None when not configuring or running Q-Learning training.
     pub qlearning_parameters: Option<QLearning>,
+
+    pub qlearning_loading: Option<f64>,
+
+    pub qlearning_channel: Option<std::sync::mpsc::Receiver<f64>>,
 }
 
 impl App {
@@ -209,6 +214,8 @@ impl App {
             selected_cell: None,        // Aucune cellule sélectionnée par défaut
             timer: None,                // Pas de timer initialement
             qlearning_parameters: None, // Pas de paramètres QLearning initialement
+            qlearning_loading: None,
+            qlearning_channel: None, // Pas de canal QLearning initialement
         }
     }
 

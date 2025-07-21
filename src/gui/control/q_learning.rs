@@ -1,3 +1,5 @@
+use std::sync::mpsc;
+
 use ratatui::crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
@@ -134,8 +136,13 @@ pub fn q_learning_parameters_control(app: &mut App, key: KeyEvent) {
         },
         KeyCode::Enter => match app.current_mode.selected() {
             Some(4) => {
-                // lancer le training dans un thread séparé
-                // aller sur l'écran de training
+                app.current_screen = CurrentScreen::QLearningLoading;
+                let (tx, rx) = mpsc::channel();
+                let mut qlearning_params = app.qlearning_parameters.take().unwrap();
+                std::thread::spawn(move || {
+                    qlearning_params.try_q_learning(tx);
+                });
+                app.qlearning_channel = Some(rx);
             }
             _ => {}
         },

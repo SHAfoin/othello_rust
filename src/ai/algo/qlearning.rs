@@ -6,7 +6,7 @@
 //! gradually improving its play through experience.
 
 use rand::{rng, Rng};
-use std::{collections::HashMap, fs::File, io::Write};
+use std::{collections::HashMap, fs::File, io::Write, sync::mpsc};
 
 use crate::{
     ai::{ai_type::AIType, heuristic::HeuristicType, heuristic_matrix::AIHeuristicMatrix},
@@ -339,13 +339,18 @@ impl QLearning {
     /// let mut ai = QLearning::new(1000, HeuristicType::default(), AIHeuristicMatrix::default(), 500, Cell::Black);
     /// ai.try_q_learning();  // Train for 500 epochs
     /// ```
-    pub fn try_q_learning(&mut self) {
+    pub fn try_q_learning(&mut self, tx: mpsc::Sender<f64>) {
         for i in 0..self.epoch {
-            println!("Epoch {}/{}", i + 1, self.epoch);
             // Play one training game and learn from it
             let (_total_r, _done) = self.q_learning();
             // Gradually reduce epsilon to favor exploitation over exploration
             self.set_epsilon(self.get_epsilon() * 0.999);
+
+            // Send progress update to the channel
+            if let Err(e) = tx.send(i as f64 / self.epoch as f64) {
+                eprintln!("Error sending training progress: {}", e);
+                break;
+            }
         }
         // Export the learned Q-table for future use
         self.export_q_table("q_table.json");

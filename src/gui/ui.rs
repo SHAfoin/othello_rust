@@ -19,7 +19,8 @@ use crate::gui::{
     screen::{
         ai_vs_ai::ai_vs_ai_screen, exit::exit_screen, game::game_screen,
         human_vs_ai::human_vs_ai_screen, main::main_screen,
-        q_learning::q_learning_parameters_screen, tutorial::tutorial_screen,
+        q_learning::q_learning_parameters_screen, q_learning_loading::q_learning_loading_screen,
+        tutorial::tutorial_screen,
     },
 };
 
@@ -198,6 +199,9 @@ pub fn ui(frame: &mut Frame, app: &mut App) {
         }
         CurrentScreen::Exit => {
             exit_screen(frame, app);
+        }
+        CurrentScreen::QLearningLoading => {
+            q_learning_loading_screen(frame, app);
         }
     }
 }

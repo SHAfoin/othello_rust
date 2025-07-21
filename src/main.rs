@@ -40,6 +40,7 @@ use crate::{
             human_vs_ai::human_vs_ai_control,
             main::main_control,
             q_learning::{self, q_learning_parameters_control},
+            q_learning_loading::q_learning_loading_control,
             tutorial::tutorial_control,
         },
         screen::q_learning::q_learning_parameters_screen,
@@ -139,6 +140,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                     CurrentScreen::HumanVsAI => human_vs_ai_control(app, key),
                     CurrentScreen::AIVsAI => ai_vs_ai_control(app, key),
                     CurrentScreen::QLearningParameters => q_learning_parameters_control(app, key),
+                    CurrentScreen::QLearningLoading => q_learning_loading_control(app, key),
                 }
             }
         }
