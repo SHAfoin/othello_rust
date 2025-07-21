@@ -1,3 +1,9 @@
+//! Human vs AI configuration screen implementation.
+//!
+//! This module provides the user interface for configuring Human vs AI games.
+//! It allows users to set up AI opponent parameters while playing as the human
+//! player, offering customization of AI difficulty and behavior settings.
+
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Flex, Layout},
     style::{Color, Style, Stylize},
@@ -14,6 +20,72 @@ use crate::{
     },
 };
 
+/// Renders the Human vs AI configuration screen.
+///
+/// This function creates and displays the configuration interface for setting up
+/// a Human vs AI game. It provides interactive controls for customizing the AI
+/// opponent's parameters, allowing players to adjust difficulty and playing style
+/// to match their preferences.
+///
+/// # Screen Layout
+///
+/// The screen is organized into four main sections:
+/// - **Title area**: Application branding and screen identification
+/// - **Configuration list**: Interactive AI parameter settings
+/// - **Message area**: Status messages and error notifications
+/// - **Footer**: Navigation instructions and available controls
+///
+/// # AI Configuration Options
+///
+/// Players can configure the following AI parameters:
+/// - **AI Type**: Choose algorithm (MinMax, Alpha-Beta, Q-Learning)
+/// - **Search Depth**: Set analysis depth for tree-based algorithms
+/// - **Heuristic Type**: Select evaluation function approach
+/// - **Heuristic Matrix**: Choose strategic focus for position evaluation
+/// - **Multi-threading**: Enable performance optimization where applicable
+///
+/// # Dynamic UI Behavior
+///
+/// The interface adapts based on selected AI type:
+/// - **Q-Learning**: Depth and heuristic options are disabled (grayed out)
+/// - **MinMax/Alpha-Beta**: All options available, multi-threading for MinMax only
+/// - **Matrix heuristics**: Disabled for Absolute and Mobility heuristic types
+///
+/// # Visual Feedback
+///
+/// - **Option availability**: Incompatible options shown in dark gray
+/// - **Current selection**: Highlighted with yellow background
+/// - **Value display**: Current settings shown in angle brackets format
+/// - **Status messages**: Important information displayed in message area
+///
+/// # User Experience
+///
+/// The screen provides an intuitive interface for:
+/// - Customizing AI difficulty by adjusting search depth
+/// - Selecting different AI personalities through algorithm choice
+/// - Fine-tuning AI behavior via heuristic configuration
+/// - Understanding option availability through visual cues
+///
+/// # Arguments
+///
+/// * `frame` - Ratatui frame for rendering UI widgets
+/// * `app` - Mutable application state containing AI configuration
+///
+/// # Layout Dimensions
+///
+/// - **Configuration area**: Centered rectangle (60% width, 12 rows height)
+/// - **Responsive design**: Adapts to various terminal sizes
+/// - **Consistent spacing**: Maintains visual balance across screen sections
+///
+/// # Examples
+///
+/// ```rust
+/// // Called by the main UI router when on Human vs AI screen
+/// match app.current_screen {
+///     CurrentScreen::HumanVsAI => human_vs_ai_screen(&mut frame, &mut app),
+///     // ... other screen handlers
+/// }
+/// ```
 pub fn human_vs_ai_screen(frame: &mut Frame, app: &mut App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)

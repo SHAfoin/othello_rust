@@ -1,3 +1,9 @@
+//! AI vs AI configuration screen implementation.
+//!
+//! This module provides the user interface screen for configuring AI vs AI
+//! game matches. It allows users to set up and customize AI parameters for
+//! both players before starting an automated game between two AI opponents.
+
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Flex, Layout},
     style::{Color, Style, Stylize},
@@ -14,6 +20,57 @@ use crate::{
     },
 };
 
+/// Renders the AI vs AI configuration screen.
+///
+/// This function creates and displays the configuration interface for setting up
+/// an AI vs AI game. It provides interactive controls for configuring both AI
+/// players' parameters including algorithm type, search depth, heuristics, and
+/// performance settings.
+///
+/// # Screen Layout
+///
+/// The screen is organized into several sections:
+/// - **Title area**: Game title and branding
+/// - **Configuration list**: Interactive parameter settings for both AIs
+/// - **Message area**: Error messages and status information
+/// - **Footer**: Navigation and control instructions
+///
+/// # AI Configuration Options
+///
+/// For each AI player, the following parameters can be configured:
+/// - **AI Type**: Algorithm selection (MinMax, Alpha-Beta, Q-Learning)
+/// - **Search Depth**: How many moves ahead to analyze (tree-based algorithms)
+/// - **Heuristic Type**: Evaluation function for position assessment
+/// - **Heuristic Matrix**: Strategic focus matrix for evaluation
+/// - **Multi-threading**: Performance optimization for compatible algorithms
+///
+/// # Visual Feedback
+///
+/// - **Disabled options**: Grayed out when not applicable to selected AI type
+/// - **Highlighting**: Current selection highlighted with yellow background
+/// - **Conditional display**: Options only shown when relevant to AI algorithm
+///
+/// # Arguments
+///
+/// * `frame` - Ratatui frame for rendering widgets
+/// * `app` - Mutable application state containing AI configurations
+///
+/// # UI Behavior
+///
+/// - Options are dynamically enabled/disabled based on AI type compatibility
+/// - Q-Learning AIs have depth and heuristic options disabled
+/// - Multi-threading only available for MinMax algorithm
+/// - Matrix heuristics disabled for Absolute and Mobility heuristic types
+///
+/// # Examples
+///
+/// ```rust
+/// // This function is called by the main UI loop
+/// match app.current_screen {
+///     CurrentScreen::AIvsAI => ai_vs_ai_screen(&mut frame, &mut app),
+///     // ... other screens
+/// }
+/// ```
 pub fn ai_vs_ai_screen(frame: &mut Frame, app: &mut App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)

@@ -1,21 +1,92 @@
+//! Othello game board implementation and game logic.
+//!
+//! This module provides the core game board functionality for Othello,
+//! including move validation, disc flipping, game state management,
+//! and win condition checking. The board manages the 8x8 grid of cells
+//! and enforces all Othello game rules.
+
 use std::fmt;
 
 use crate::consts::SIZE;
 use crate::game::cell::Cell;
 use crate::game::history_action::HistoryAction;
 
+/// Represents the Othello game board and manages game state.
+///
+/// The `Board` struct encapsulates all aspects of an Othello game including
+/// the 8x8 grid of cells, game state tracking, move history, and game logic.
+/// It provides methods for move validation, execution, and game state queries.
+///
+/// # Game Rules Enforced
+///
+/// - Black always starts first
+/// - Players must place discs to flip at least one opponent disc
+/// - Players must pass if no legal moves are available
+/// - Game ends when neither player can move
+/// - Winner is determined by disc count
+///
+/// # Examples
+///
+/// ```rust
+/// // Create a new game board
+/// let mut board = Board::new();
+///
+/// // Check initial state
+/// assert_eq!(board.get_player_turn(), Cell::Black);
+/// assert_eq!(board.get_turn_number(), 1);
+///
+/// // Make a move
+/// let result = board.try_play_move(2, 3, Cell::Black);
+/// assert!(result.is_ok());
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Board {
+    /// 8x8 grid representing the game board cells
     cells: [[Cell; SIZE]; SIZE],
+    /// Number of discs for each player [Black, White]
     nb_discs: [usize; 2],
+    /// Number of legal moves available for each player [Black, White]
     nb_legal_moves: [Option<usize>; 2],
+    /// Current turn number (starts at 1)
     turn_number: usize,
+    /// Current player's turn
     player_turn: Cell,
+    /// History of all moves played in the game
     history: Vec<HistoryAction>,
+    /// Whether the game has ended
     game_over: bool,
 }
 
 impl Board {
+    /// Creates a new Othello game board with the standard starting position.
+    ///
+    /// This constructor initializes an 8x8 board with the classic Othello
+    /// starting configuration: four discs in the center (two black, two white)
+    /// arranged diagonally, with Black to move first.
+    ///
+    /// # Initial Setup
+    ///
+    /// ```text
+    ///    A B C D E F G H
+    /// 0  . . . . . . . .
+    /// 1  . . . . . . . .
+    /// 2  . . . . . . . .
+    /// 3  . . . W B . . .
+    /// 4  . . . B W . . .
+    /// 5  . . . . . . . .
+    /// 6  . . . . . . . .
+    /// 7  . . . . . . . .
+    /// ```
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let board = Board::new();
+    /// assert_eq!(board.get_player_turn(), Cell::Black);
+    /// assert_eq!(board.get_nb_discs(Cell::Black).unwrap(), 2);
+    /// assert_eq!(board.get_nb_discs(Cell::White).unwrap(), 2);
+    /// assert_eq!(board.get_turn_number(), 1);
+    /// ```
     pub fn new() -> Self {
         let mut cells = [[Cell::Empty; SIZE]; SIZE];
         let center1 = SIZE / 2 - 1;
@@ -37,10 +108,58 @@ impl Board {
         }
     }
 
+    /// Adds a move to the game history.
+    ///
+    /// This method records a completed move in the game's history for
+    /// potential replay, analysis, or undo functionality.
+    ///
+    /// # Arguments
+    ///
+    /// * `action` - The `HistoryAction` representing the move to record
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let mut board = Board::new();
+    /// let action = HistoryAction {
+    ///     coordinates: Some("2D".to_string()),
+    ///     gained_discs: Some(1),
+    ///     color: Cell::Black,
+    ///     move_number: 1,
+    ///     player_turn: Cell::Black,
+    /// };
+    /// board.add_to_history(action);
+    /// assert_eq!(board.get_history().len(), 1);
+    /// ```
     pub fn add_to_history(&mut self, action: HistoryAction) {
         self.history.push(action);
     }
 
+    /// Returns the state of a cell at the specified coordinates.
+    ///
+    /// This method provides safe access to board cells with bounds checking.
+    /// It's used throughout the game logic to query cell states for move
+    /// validation and game state evaluation.
+    ///
+    /// # Arguments
+    ///
+    /// * `row` - The row index (0-7)
+    /// * `col` - The column index (0-7)
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(Cell)` - The cell state if coordinates are valid
+    /// * `Err(String)` - Error message if coordinates are out of bounds
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let board = Board::new();
+    /// assert_eq!(board.get_cell(3, 3), Ok(Cell::White));
+    /// assert_eq!(board.get_cell(3, 4), Ok(Cell::Black));
+    /// assert_eq!(board.get_cell(0, 0), Ok(Cell::Empty));
+    /// assert!(board.get_cell(8, 8).is_err());
+    /// ```
     pub fn get_cell(&self, row: usize, col: usize) -> Result<Cell, String> {
         if row < SIZE && col < SIZE {
             Ok(self.cells[row][col])
@@ -49,10 +168,44 @@ impl Board {
         }
     }
 
+    /// Returns the current player whose turn it is to move.
+    ///
+    /// This method indicates which player should make the next move.
+    /// The game alternates between Black and White players, with
+    /// Black always starting first.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let board = Board::new();
+    /// assert_eq!(board.get_player_turn(), Cell::Black); // Black starts
+    /// ```
     pub fn get_player_turn(&self) -> Cell {
         self.player_turn
     }
 
+    /// Advances the game to the next turn, handling pass situations.
+    ///
+    /// This method manages turn progression and automatically handles
+    /// situations where a player has no legal moves (must pass). If the
+    /// next player has no legal moves, their turn is automatically passed
+    /// and recorded in the history.
+    ///
+    /// # Turn Logic
+    ///
+    /// 1. Increment turn number
+    /// 2. Check if opponent has legal moves
+    /// 3. If no legal moves: record pass and increment turn again
+    /// 4. If legal moves exist: switch to opponent
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let mut board = Board::new();
+    /// assert_eq!(board.get_player_turn(), Cell::Black);
+    /// board.next_turn();
+    /// assert_eq!(board.get_player_turn(), Cell::White);
+    /// ```
     pub fn next_turn(&mut self) {
         self.turn_number += 1;
         if None
@@ -73,14 +226,63 @@ impl Board {
         }
     }
 
+    /// Sets the state of a cell at the specified coordinates.
+    ///
+    /// This is a low-level method used internally for placing discs
+    /// and flipping opponent discs during move execution.
+    ///
+    /// # Arguments
+    ///
+    /// * `row` - The row index (0-7)
+    /// * `col` - The column index (0-7)
+    /// * `cell` - The new cell state to set
+    ///
+    /// # Safety
+    ///
+    /// This method does not perform bounds checking. Callers must ensure
+    /// coordinates are valid (0-7 for both row and col).
     pub fn set_cell(&mut self, row: usize, col: usize, cell: Cell) {
         self.cells[row][col] = cell;
     }
 
+    /// Returns the current turn number.
+    ///
+    /// The turn number starts at 1 and increments with each move.
+    /// Pass moves also increment the turn number.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let board = Board::new();
+    /// assert_eq!(board.get_turn_number(), 1);
+    /// ```
     pub fn get_turn_number(&self) -> usize {
         self.turn_number
     }
 
+    /// Returns the number of legal moves available for the specified player.
+    ///
+    /// This method retrieves the cached count of legal moves for a player.
+    /// The count is updated after each move and is used for game logic
+    /// and AI evaluation.
+    ///
+    /// # Arguments
+    ///
+    /// * `color` - The player color (Black or White)
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(Some(count))` - Number of legal moves available
+    /// * `Ok(None)` - No legal moves available (player must pass)
+    /// * `Err(String)` - Error if invalid color is provided
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let board = Board::new();
+    /// assert_eq!(board.get_nb_legal_moves(Cell::Black), Ok(Some(4)));
+    /// assert_eq!(board.get_nb_legal_moves(Cell::White), Ok(Some(4)));
+    /// ```
     pub fn get_nb_legal_moves(&self, color: Cell) -> Result<Option<usize>, String> {
         let index = match color {
             Cell::Black => 0,
@@ -91,6 +293,20 @@ impl Board {
         Ok(self.nb_legal_moves[index])
     }
 
+    /// Updates the number of legal moves available for the specified player.
+    ///
+    /// This method is used internally to maintain the cached count of legal
+    /// moves after board state changes.
+    ///
+    /// # Arguments
+    ///
+    /// * `color` - The player color (Black or White)
+    /// * `nb_moves` - New number of legal moves (None if no moves available)
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(())` - Successfully updated
+    /// * `Err(String)` - Error if invalid color is provided
     pub fn set_nb_legal_moves(
         &mut self,
         color: Cell,
@@ -105,6 +321,28 @@ impl Board {
         Ok(())
     }
 
+    /// Returns the number of discs for the specified player.
+    ///
+    /// This method provides the current count of discs on the board for
+    /// a given player. This is essential for determining the winner and
+    /// for heuristic evaluation in AI players.
+    ///
+    /// # Arguments
+    ///
+    /// * `color` - The player color (Black or White)
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(count)` - Number of discs for the player
+    /// * `Err(String)` - Error if invalid color is provided
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let board = Board::new();
+    /// assert_eq!(board.get_nb_discs(Cell::Black), Ok(2));
+    /// assert_eq!(board.get_nb_discs(Cell::White), Ok(2));
+    /// ```
     pub fn get_nb_discs(&self, color: Cell) -> Result<usize, String> {
         match color {
             Cell::Black => Ok(self.nb_discs[0]),
@@ -113,20 +351,70 @@ impl Board {
         }
     }
 
+    /// Returns a reference to the internal cell array.
+    ///
+    /// This method provides read-only access to the complete board state
+    /// for analysis, display, or serialization purposes.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let board = Board::new();
+    /// let cells = board.get_cells();
+    /// assert_eq!(cells[3][3], Cell::White);
+    /// ```
     pub fn get_cells(&self) -> &[[Cell; SIZE]; SIZE] {
         &self.cells
     }
 
+    /// Returns a reference to the game move history.
+    ///
+    /// This method provides access to the complete history of moves
+    /// played in the game, useful for replay, analysis, or undo functionality.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let board = Board::new();
+    /// assert_eq!(board.get_history().len(), 0); // No moves yet
+    /// ```
     pub fn get_history(&self) -> &Vec<HistoryAction> {
         &self.history
     }
 
-    pub fn try_play_move(
-        &mut self,
-        row: usize,
-        col: usize,
-        color: Cell,
-    ) -> Result<(usize), String> {
+    /// Attempts to play a move at the specified coordinates.
+    ///
+    /// This is the main method for executing moves in the game. It validates
+    /// the move, places the disc, flips opponent discs in all valid directions,
+    /// and updates the game state.
+    ///
+    /// # Arguments
+    ///
+    /// * `row` - The row coordinate (0-7)
+    /// * `col` - The column coordinate (0-7)
+    /// * `color` - The color of the disc to place
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(count)` - Number of opponent discs that were flipped
+    /// * `Err(String)` - Error message if the move is invalid
+    ///
+    /// # Errors
+    ///
+    /// - Coordinates out of bounds (0-7)
+    /// - Target cell is not empty
+    /// - Invalid player color
+    /// - Move doesn't flip any opponent discs
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let mut board = Board::new();
+    /// let result = board.try_play_move(2, 3, Cell::Black);
+    /// assert!(result.is_ok());
+    /// assert_eq!(result.unwrap(), 1); // One disc was flipped
+    /// ```
+    pub fn try_play_move(&mut self, row: usize, col: usize, color: Cell) -> Result<usize, String> {
         match self.can_play(row, col, color) {
             Ok(directions) => {
                 self.set_cell(row, col, color);
@@ -164,6 +452,40 @@ impl Board {
         }
     }
 
+    /// Checks if a move is valid and returns capture directions.
+    ///
+    /// This method validates if a disc can be placed at the specified position
+    /// and returns all valid capture directions if the move is legal. A move
+    /// is valid if it captures at least one opponent disc in any direction.
+    ///
+    /// # Arguments
+    ///
+    /// * `row` - Row position (0-7)
+    /// * `col` - Column position (0-7)
+    /// * `color` - Color of the disc to place
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(Vec<(isize, isize)>)` - Valid capture directions
+    /// * `Err(String)` - Error message if move is invalid
+    ///
+    /// # Validation Rules
+    ///
+    /// - Position must be within board bounds
+    /// - Target cell must be empty
+    /// - Color must be Black or White
+    /// - Must capture at least one opponent disc
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let board = Board::new();
+    /// // Valid opening moves
+    /// assert!(board.can_play(2, 3, Cell::Black).is_ok());
+    /// assert!(board.can_play(3, 2, Cell::Black).is_ok());
+    /// // Invalid move (occupied cell)
+    /// assert!(board.can_play(3, 3, Cell::Black).is_err());
+    /// ```
     pub fn can_play(
         &self,
         row: usize,
@@ -186,6 +508,33 @@ impl Board {
         }
     }
 
+    /// Gets all directions where placing a disc would capture opponent discs.
+    ///
+    /// This method scans all eight directions (horizontal, vertical, diagonal)
+    /// from a given position to find valid capture lines. A direction is
+    /// valid if it forms a line of opponent discs ending with the player's color.
+    ///
+    /// # Arguments
+    ///
+    /// * `row` - Row position to check
+    /// * `col` - Column position to check
+    /// * `color` - Player color to check for
+    ///
+    /// # Returns
+    ///
+    /// Vector of direction tuples (row_delta, col_delta) where captures are possible
+    ///
+    /// # Direction Encoding
+    ///
+    /// Directions are encoded as (-1, 0, 1) tuples:
+    /// - (-1, -1): Up-left diagonal
+    /// - (-1, 0): Up
+    /// - (-1, 1): Up-right diagonal
+    /// - (0, -1): Left
+    /// - (0, 1): Right
+    /// - (1, -1): Down-left diagonal
+    /// - (1, 0): Down
+    /// - (1, 1): Down-right diagonal
     pub fn get_valid_directions(&self, row: usize, col: usize, color: Cell) -> Vec<(isize, isize)> {
         let mut valid_directions = Vec::new();
 
@@ -204,6 +553,29 @@ impl Board {
         valid_directions
     }
 
+    /// Recursively validates if a move captures discs in a given direction.
+    ///
+    /// This method implements the core Othello capture validation logic by
+    /// walking along a direction from the starting position. It ensures there's
+    /// at least one opponent disc followed by a player's disc.
+    ///
+    /// # Arguments
+    ///
+    /// * `row` - Starting row position
+    /// * `col` - Starting column position
+    /// * `color` - Player color
+    /// * `index` - Distance from starting position
+    /// * `direction` - Direction tuple (row_delta, col_delta)
+    ///
+    /// # Returns
+    ///
+    /// `true` if the direction forms a valid capture line, `false` otherwise
+    ///
+    /// # Validation Logic
+    ///
+    /// 1. First adjacent cell must be opponent color (not same color or empty)
+    /// 2. Continue along direction while finding opponent discs
+    /// 3. Must end with player's color disc (not empty or board edge)
     pub fn is_move_valid_recursive(
         &self,
         row: isize,
@@ -227,6 +599,22 @@ impl Board {
         }
     }
 
+    /// Flips opponent discs along a capture direction.
+    ///
+    /// This private method handles the actual disc flipping after a valid move
+    /// has been confirmed. It walks along the specified direction from the
+    /// move position, flipping all opponent discs until reaching the player's disc.
+    ///
+    /// # Arguments
+    ///
+    /// * `row` - Starting row position
+    /// * `col` - Starting column position  
+    /// * `color` - Player color to flip to
+    /// * `direction` - Direction tuple for flipping
+    ///
+    /// # Returns
+    ///
+    /// Number of discs flipped in this direction
     fn flip_discs(
         &mut self,
         row: usize,
@@ -248,6 +636,37 @@ impl Board {
         flipped_count
     }
 
+    /// Finds all legal moves for a given player.
+    ///
+    /// This method scans the entire board to identify all positions where
+    /// the specified player can make a valid move. This is essential for
+    /// determining if a player has any moves available or if the game should end.
+    ///
+    /// # Arguments
+    ///
+    /// * `color` - Player color to check moves for
+    ///
+    /// # Returns
+    ///
+    /// * `Some(Vec<(usize, usize)>)` - List of valid move coordinates
+    /// * `None` - No legal moves available
+    ///
+    /// # Strategic Importance
+    ///
+    /// This method is crucial for:
+    /// - AI move generation and evaluation
+    /// - Determining when to skip a player's turn
+    /// - Detecting game end conditions
+    /// - Providing move hints to human players
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let board = Board::new();
+    /// let black_moves = board.has_legal_moves(Cell::Black);
+    /// assert!(black_moves.is_some()); // Black has 4 opening moves
+    /// assert_eq!(black_moves.unwrap().len(), 4);
+    /// ```
     pub fn has_legal_moves(&self, color: Cell) -> Option<Vec<(usize, usize)>> {
         let mut legal_moves: Vec<(usize, usize)> = Vec::new();
         for row in 0..SIZE {
@@ -264,6 +683,36 @@ impl Board {
         }
     }
 
+    /// Converts human-readable input coordinates to array indices.
+    ///
+    /// This utility method converts string coordinates (like "3D") into
+    /// array indices suitable for board access. The format expects a digit
+    /// (0-7) followed by a letter (A-H, case insensitive).
+    ///
+    /// # Arguments
+    ///
+    /// * `input` - String coordinates in format "RowColumn" (e.g., "3D")
+    ///
+    /// # Returns
+    ///
+    /// * `Some((row, col))` - Valid coordinates as (row, column) indices
+    /// * `None` - Invalid input format or coordinates out of bounds
+    ///
+    /// # Format
+    ///
+    /// - First character: row number (0-7)
+    /// - Second character: column letter (A-H, case insensitive)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// assert_eq!(Board::input_to_coordinates("3D"), Some((3, 3)));
+    /// assert_eq!(Board::input_to_coordinates("0A"), Some((0, 0)));
+    /// assert_eq!(Board::input_to_coordinates("7H"), Some((7, 7)));
+    /// assert_eq!(Board::input_to_coordinates("2d"), Some((2, 3))); // Case insensitive
+    /// assert_eq!(Board::input_to_coordinates("9A"), None); // Out of bounds
+    /// assert_eq!(Board::input_to_coordinates("3"), None); // Invalid format
+    /// ```
     pub fn input_to_coordinates(input: &str) -> Option<(usize, usize)> {
         if input.len() != 2 {
             return None;
@@ -277,6 +726,23 @@ impl Board {
         }
     }
 
+    /// Determines the winner of the game based on disc count.
+    ///
+    /// This method compares the number of discs for each player to determine
+    /// the winner. The player with the most discs on the board wins.
+    ///
+    /// # Returns
+    ///
+    /// * `Some(Cell::Black)` - Black player has more discs
+    /// * `Some(Cell::White)` - White player has more discs  
+    /// * `None` - Equal number of discs (tie game)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let board = Board::new();
+    /// assert_eq!(board.get_winner(), None); // Tie at start (2-2)
+    /// ```
     pub fn get_winner(&self) -> Option<Cell> {
         let black_count = self.get_nb_discs(Cell::Black).unwrap();
         let white_count = self.get_nb_discs(Cell::White).unwrap();
@@ -290,6 +756,29 @@ impl Board {
         }
     }
 
+    /// Converts array indices to human-readable coordinate string.
+    ///
+    /// This utility method converts internal array coordinates to the
+    /// human-readable format used in Othello notation. This is the inverse
+    /// operation of `input_to_coordinates`.
+    ///
+    /// # Arguments
+    ///
+    /// * `row` - Row index (0-7)
+    /// * `col` - Column index (0-7)
+    ///
+    /// # Returns
+    ///
+    /// String coordinates in format "RowColumn" (e.g., "3D"), or empty string if invalid
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// assert_eq!(Board::coordinates_to_input(3, 3), "3D");
+    /// assert_eq!(Board::coordinates_to_input(0, 0), "0A");
+    /// assert_eq!(Board::coordinates_to_input(7, 7), "7H");
+    /// assert_eq!(Board::coordinates_to_input(8, 8), ""); // Invalid coordinates
+    /// ```
     pub fn coordinates_to_input(row: usize, col: usize) -> String {
         if row < SIZE && col < SIZE {
             format!("{}{}", row, (col as u8 + b'A') as char)
@@ -298,6 +787,43 @@ impl Board {
         }
     }
 
+    /// Generates a string hash representation of the board state.
+    ///
+    /// This method creates a compact string representation of the current
+    /// board state that can be used for caching, state comparison, or
+    /// transposition tables in AI algorithms. The hash includes both the
+    /// board configuration and the current player turn.
+    ///
+    /// # Returns
+    ///
+    /// String hash where:
+    /// - First character: Current player ('B' for Black, 'W' for White)
+    /// - Following 64 characters: Board state row by row
+    ///   - '0': Empty cell
+    ///   - '1': Black disc
+    ///   - '2': White disc
+    ///
+    /// # Hash Format
+    ///
+    /// The hash is 65 characters long:
+    /// - Character 0: Player turn indicator
+    /// - Characters 1-64: Board cells (8x8 = 64 cells)
+    ///
+    /// # Use Cases
+    ///
+    /// - AI transposition tables for avoiding recalculation
+    /// - Game state serialization and storage
+    /// - Position analysis and pattern recognition
+    /// - Debugging and state verification
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let board = Board::new();
+    /// let hash = board.to_hash();
+    /// assert_eq!(hash.len(), 65); // 1 turn + 64 cells
+    /// assert!(hash.starts_with('B')); // Black starts first
+    /// ```
     pub fn to_hash(&self) -> String {
         let mut hash = String::new();
         match self.get_player_turn() {
@@ -317,10 +843,62 @@ impl Board {
         hash
     }
 
+    /// Checks if the game has ended.
+    ///
+    /// This method returns the current game state without performing any
+    /// checks or updates. Use `check_game_over()` to update the game state
+    /// before calling this method for accurate results.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the game is over, `false` if the game is still in progress
+    ///
+    /// # Game End Conditions
+    ///
+    /// The game ends when neither player has any legal moves available.
+    /// This can happen when:
+    /// - The board is completely filled
+    /// - All remaining empty spaces cannot capture any discs
+    /// - One player has no discs left (rare but possible)
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let mut board = Board::new();
+    /// assert!(!board.is_game_over()); // Game just started
+    /// board.check_game_over(); // Update game state
+    /// assert!(!board.is_game_over()); // Still moves available
+    /// ```
     pub fn is_game_over(&self) -> bool {
         self.game_over
     }
 
+    /// Updates and checks if the game has ended.
+    ///
+    /// This method performs the actual game end condition check by verifying
+    /// if both players have legal moves available. It updates the internal
+    /// game state and returns the result.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the game is over (no legal moves for either player), `false` otherwise
+    ///
+    /// # Game End Logic
+    ///
+    /// The game ends when both of these conditions are true:
+    /// 1. Black player has no legal moves
+    /// 2. White player has no legal moves
+    ///
+    /// # Side Effects
+    ///
+    /// Updates the internal `game_over` flag based on current board state
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// let mut board = Board::new();
+    /// assert!(!board.check_game_over()); // Both players have moves
+    /// ```
     pub fn check_game_over(&mut self) -> bool {
         self.game_over = self.get_nb_legal_moves(Cell::Black).unwrap().is_none()
             && self.get_nb_legal_moves(Cell::White).unwrap().is_none();
@@ -328,6 +906,37 @@ impl Board {
     }
 }
 
+/// Implementation of Display trait for Board.
+///
+/// Provides a human-readable text representation of the Othello board
+/// suitable for console output and debugging. The display shows column
+/// labels (A-H), row numbers (0-7), and disc positions using symbols.
+///
+/// # Display Format
+///
+/// ```text
+///    A B C D E F G H
+///
+/// 0  * * * * * * * *
+/// 1  * * * * * * * *
+/// 2  * * * * * * * *
+/// 3  * * * W B * * *
+/// 4  * * * B W * * *
+/// 5  * * * * * * * *
+/// 6  * * * * * * * *
+/// 7  * * * * * * * *
+/// ```
+///
+/// # Symbol Legend
+///
+/// - `*`: Empty cell
+/// - `B`: Black disc
+/// - `W`: White disc
+///
+/// # Usage
+///
+/// This implementation allows using `print!`, `println!`, and `format!` macros
+/// with Board instances for easy visualization during development and gameplay.
 impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut display = String::new();
