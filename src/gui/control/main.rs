@@ -1,3 +1,10 @@
+//! Input control handler for the main menu screen.
+//!
+//! This module provides keyboard input handling for the main menu interface.
+//! It manages navigation through game mode options and initializes players
+//! for different game types including Human vs Human, Human vs AI, AI vs AI,
+//! and Q-Learning training modes.
+
 use ratatui::crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
@@ -12,6 +19,43 @@ use crate::{
     human::Human,
 };
 
+/// Handles keyboard input for the main menu screen.
+///
+/// This function processes user input on the main menu, allowing navigation
+/// through different game modes and initializing the appropriate players
+/// and game configurations based on the selected option.
+///
+/// # Arguments
+///
+/// * `app` - Mutable reference to the application state
+/// * `key` - The keyboard event to process
+///
+/// # Key Bindings
+///
+/// * `Up/Down` - Navigate through menu options
+/// * `Enter` - Select the currently highlighted menu option
+///
+/// # Menu Options
+///
+/// * **Option 0**: Human vs Human - Creates two human players and starts game immediately
+/// * **Option 1**: Human vs AI - Creates human player 1 and AI player 2, goes to configuration screen
+/// * **Option 2**: AI vs AI - Creates two AI players with default settings, goes to configuration screen
+/// * **Option 3**: Q-Learning Training - Sets up Q-Learning parameters and goes to training configuration
+///
+/// # Player Initialization
+///
+/// Each game mode initializes players with specific default configurations:
+/// - **Human players**: Simple human controllers for manual input
+/// - **AI players**: Pre-configured with optimal settings (AlphaBeta, MinMax)
+/// - **Q-Learning**: Configurable training parameters and heuristics
+///
+/// # Examples
+///
+/// ```
+/// let mut app = App::new();
+/// let key_event = KeyEvent::from(KeyCode::Enter);
+/// main_control(&mut app, key_event);
+/// ```
 pub fn main_control(app: &mut App, key: KeyEvent) {
     match key.code {
         KeyCode::Up => {
@@ -22,11 +66,13 @@ pub fn main_control(app: &mut App, key: KeyEvent) {
         }
         KeyCode::Enter => match app.current_mode.selected() {
             Some(0) => {
+                // Human vs Human - start game immediately
                 app.player_1 = Some(Box::new(Human::new(Cell::Black)));
                 app.player_2 = Some(Box::new(Human::new(Cell::White)));
                 app.start_game();
             }
             Some(1) => {
+                // Human vs AI - go to configuration screen
                 app.player_1 = Some(Box::new(Human::new(Cell::Black)));
                 app.player_2 = Some(Box::new(AIMinMax::new(
                     3,
@@ -40,6 +86,7 @@ pub fn main_control(app: &mut App, key: KeyEvent) {
                 app.current_mode.select_first();
             }
             Some(2) => {
+                // AI vs AI - go to configuration screen
                 app.player_1 = Some(Box::new(AIAlphaBeta::new(
                     MAX_DEPTH,
                     HeuristicType::Mixte,
@@ -56,6 +103,7 @@ pub fn main_control(app: &mut App, key: KeyEvent) {
                 app.current_mode.select_first();
             }
             Some(3) => {
+                // Q-Learning Training - go to parameters screen
                 app.current_screen = CurrentScreen::QLearningParameters;
                 app.qlearning_parameters = Some(QLearning::new(
                     64,

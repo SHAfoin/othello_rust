@@ -1,3 +1,9 @@
+//! Q-Learning training progress screen for the Othello game GUI.
+//!
+//! This module provides the visual interface for displaying Q-Learning AI training progress.
+//! It shows a progress bar, completion percentage, status messages, and handles
+//! real-time updates from the training thread through channel communication.
+
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Flex, Layout},
     style::{Color, Style},
@@ -8,6 +14,49 @@ use ratatui::{
 
 use crate::gui::{app::App, ui::footer};
 
+/// Renders the Q-Learning training progress screen.
+///
+/// This function displays a real-time progress interface for Q-Learning AI training,
+/// including a visual progress bar, percentage completion, status messages, and
+/// navigation instructions. It communicates with the training thread through
+/// a channel to receive progress updates.
+///
+/// # Arguments
+///
+/// * `frame` - Mutable reference to the terminal frame for rendering
+/// * `app` - Mutable reference to the application state
+///
+/// # Layout Structure
+///
+/// The screen is organized in a vertical layout with:
+/// - Fill space (top padding)
+/// - Progress bar section (5 lines)
+/// - Status message line (1 line)
+/// - Fill space (bottom padding)
+/// - Footer with navigation instructions (1 line)
+///
+/// # Progress Communication
+///
+/// The function uses `app.qlearning_channel` to receive training progress:
+/// - Uses `try_recv()` for non-blocking progress updates
+/// - Updates `app.qlearning_loading` with the latest progress value
+/// - Handles channel communication errors gracefully
+///
+/// # Visual Elements
+///
+/// * **Progress Bar**: Yellow gauge with percentage label showing training completion
+/// * **Status Messages**:
+///   - "Training in progress, please wait..." during training
+///   - "Training complete! The Q table has been saved as 'q_table_player_1.json'." when finished
+/// * **Footer**: Navigation instructions for returning to main menu
+///
+/// # Examples
+///
+/// ```
+/// let mut frame = Frame::new();
+/// let mut app = App::new();
+/// q_learning_loading_screen(&mut frame, &mut app);
+/// ```
 pub fn q_learning_loading_screen(frame: &mut Frame, app: &mut App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)

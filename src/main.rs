@@ -1,3 +1,45 @@
+//! Othello Game Implementation in Rust
+//!
+//! This is a complete implementation of the classic Othello (Reversi) board game in Rust,
+//! featuring a terminal-based user interface built with Ratatui. The game supports multiple
+//! play modes including Human vs Human, Human vs AI, AI vs AI, and Q-Learning training.
+//!
+//! # Features
+//!
+//! * **Multiple Game Modes**: Human vs Human, Human vs AI, AI vs AI, Q-Learning training
+//! * **Advanced AI Algorithms**: MinMax, Alpha-Beta pruning, Q-Learning reinforcement learning
+//! * **Terminal UI**: Rich interactive terminal interface using Ratatui framework
+//! * **Configurable AI**: Adjustable search depth, heuristics, and training parameters
+//! * **Real-time Training**: Background Q-Learning with progress visualization
+//!
+//! # Architecture
+//!
+//! The application follows a modular architecture with clear separation of concerns:
+//! - **Game Logic**: Core game rules, board state, and player management
+//! - **AI Systems**: Multiple AI implementations with different strategies
+//! - **GUI Layer**: Terminal interface with screens and input controls
+//! - **Configuration**: Constants and parameters for AI and game settings
+//!
+//! # AI Implementations
+//!
+//! * **MinMax**: Classic minimax algorithm with optional multithreading
+//! * **Alpha-Beta**: Optimized minimax with alpha-beta pruning
+//! * **Q-Learning**: Reinforcement learning with configurable parameters
+//!
+//! # Usage
+//!
+//! Run the application to access the main menu with game mode selection:
+//! ```bash
+//! cargo run
+//! ```
+//!
+//! Navigate using arrow keys and Enter to select options. Each game mode
+//! provides its own configuration interface before starting play.
+//!
+//! # Author
+//!
+//! SALTEL Baptiste - July 2025
+
 //  ===================================================================
 //
 //  ███████╗██╗  ██╗ █████╗         ███████╗ ██████╗ ██╗███╗   ██╗
@@ -6,13 +48,6 @@
 //  ╚════██║██╔══██║██╔══██║        ██╔══╝  ██║   ██║██║██║╚██╗██║
 //  ███████║██║  ██║██║  ██║███████╗██║     ╚██████╔╝██║██║ ╚████║
 //  ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝      ╚═════╝ ╚═╝╚═╝  ╚═══╝
-//
-//  @file : src\main.rs
-//  @description : Othello game implementation in Rust.
-//  @author : SALTEL Baptiste
-//  @date : 08/07/2025
-//  @version : 1.0
-//  @license : none
 //
 //  ===================================================================
 
@@ -59,9 +94,47 @@ use ratatui::crossterm::terminal::{enable_raw_mode, EnterAlternateScreen};
 use ratatui::prelude::Backend;
 use ratatui::prelude::CrosstermBackend;
 use ratatui::Terminal;
-use std::{error::Error, thread::current, time::Instant};
-use std::{io, time::Duration};
+use std::{error::Error, io, time::Duration};
 
+/// Entry point for the Othello game application.
+///
+/// This function initializes the terminal interface, sets up the application state,
+/// and runs the main game loop. It handles all terminal configuration including
+/// raw mode, alternate screen, and mouse capture for the Ratatui interface.
+///
+/// # Terminal Setup
+///
+/// The function configures the terminal for interactive use:
+/// - Enables raw mode for direct key capture
+/// - Switches to alternate screen to preserve terminal state
+/// - Enables mouse capture for potential future mouse support
+/// - Creates a Crossterm backend for Ratatui
+///
+/// # Error Handling
+///
+/// Returns a boxed error if any terminal operations fail during:
+/// - Terminal mode configuration
+/// - Application execution
+/// - Terminal state restoration
+///
+/// # Cleanup
+///
+/// Ensures proper cleanup regardless of how the application exits:
+/// - Disables raw mode
+/// - Restores original screen
+/// - Disables mouse capture
+/// - Shows cursor
+///
+/// # Examples
+///
+/// ```bash
+/// cargo run
+/// ```
+///
+/// # Returns
+///
+/// * `Ok(())` - Application completed successfully
+/// * `Err(Box<dyn Error>)` - Terminal or application error occurred
 fn main() -> Result<(), Box<dyn Error>> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -73,7 +146,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // create app and run it
     let mut app = App::new();
-    let res = run_app(&mut terminal, &mut app);
+    let _res = run_app(&mut terminal, &mut app);
 
     // Bien désactiver tout ça à la fin !
     disable_raw_mode()?;
@@ -87,51 +160,113 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+/// Main application loop handling UI rendering and event processing.
+///
+/// This function implements the core game loop that continuously:
+/// - Renders the current screen state
+/// - Processes player turns (human input or AI computation)
+/// - Handles keyboard events and screen transitions
+/// - Manages the application state machine
+///
+/// # Arguments
+///
+/// * `terminal` - Mutable reference to the terminal interface
+/// * `app` - Mutable reference to the application state
+///
+/// # Game Loop Architecture
+///
+/// The loop operates in several phases each iteration:
+/// 1. **Rendering**: Draws the current screen using the UI system
+/// 2. **Turn Management**: Determines current player and triggers AI moves
+/// 3. **Event Processing**: Handles keyboard input with 100ms polling
+/// 4. **Screen Routing**: Dispatches events to appropriate control handlers
+///
+/// # Player Turn Logic
+///
+/// During active gameplay (CurrentScreen::Game):
+/// - Determines current player based on board state (Black/White)
+/// - Identifies if current player is human or AI
+/// - Automatically triggers AI moves when it's an AI player's turn
+/// - Prevents moves when game is over
+///
+/// # Event Handling
+///
+/// Processes keyboard events based on current screen:
+/// - **Main**: Menu navigation and game mode selection
+/// - **Game**: Gameplay controls and move execution
+/// - **Tutorial**: Help screen navigation
+/// - **Exit**: Confirmation dialog
+/// - **Configuration Screens**: Parameter adjustment for AI settings
+/// - **Training**: Q-Learning progress and control
+///
+/// # Input Processing
+///
+/// - Polls for events every 100ms to balance responsiveness and CPU usage
+/// - Filters out key release events to prevent duplicate processing
+/// - Routes input to screen-specific control handlers
+/// - Handles special case of 'q' quit from main menu
+///
+/// # Examples
+///
+/// ```
+/// let mut terminal = Terminal::new(backend)?;
+/// let mut app = App::new();
+/// run_app(&mut terminal, &mut app)?;
+/// ```
+///
+/// # Returns
+///
+/// * `Ok(())` - Application loop completed successfully
+/// * `Err(io::Error)` - Terminal or rendering error occurred
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<()> {
     let mut player_turn;
     let mut its_a_human_player = false;
 
     loop {
-        // Dessiner en boucle sur le terminal
-
+        // Render current screen state
         terminal.draw(|f| ui(f, app))?;
+
+        // Handle player turns during active gameplay
         match app.current_screen {
             CurrentScreen::Game => {
+                // Determine current player based on board state
                 match app.board.as_ref().unwrap().get_player_turn() {
                     Cell::Black => {
-                        player_turn = &app.player_1;
+                        player_turn = &app.player_1; // Player 1 is always Black
                     }
                     Cell::White => {
-                        player_turn = &app.player_2;
+                        player_turn = &app.player_2; // Player 2 is always White
                     }
                     _ => {
-                        player_turn = &None;
+                        player_turn = &None; // Invalid state
                     }
                 }
+                // Process AI moves automatically
                 if let Some(player) = player_turn {
                     its_a_human_player = player.is_human();
                     if !player.is_human() && !app.board.as_ref().unwrap().is_game_over() {
-                        app.gui_play_turn();
+                        app.gui_play_turn(); // AI makes move automatically
                     }
                 }
             }
-            _ => {}
+            _ => {} // Other screens don't need turn processing
         }
 
-        // Gérer les events
+        // Handle keyboard events with polling
         if event::poll(Duration::from_millis(100))? {
             if let Event::Key(key) = event::read()? {
                 if key.kind == event::KeyEventKind::Release {
-                    // Skip events that are not KeyEventKind::Press
+                    // Skip key release events to prevent duplicate processing
                     continue;
                 }
-                // Gestion selon l'écran actuel
+                // Route events to appropriate screen controllers
                 match app.current_screen {
                     CurrentScreen::Main => match key.code {
                         KeyCode::Char('q') => {
+                            // Special case: quit from main menu
                             return Ok(());
                         }
-                        _ => main_control(app, key),
+                        _ => main_control(app, key), // Handle menu navigation
                     },
 
                     CurrentScreen::Game => game_control(app, key, its_a_human_player),
