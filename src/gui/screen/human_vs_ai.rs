@@ -151,7 +151,7 @@ pub fn human_vs_ai_screen(frame: &mut Frame, app: &mut App) {
         }),
         Span::from(format!(
             "{:<30}{:>20}",
-            "1 - Double Threading",
+            "Double Threading",
             format!(
                 "< {} >",
                 app.player_1.as_ref().unwrap().get_double_threading()

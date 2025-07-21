@@ -14,7 +14,6 @@ use crate::{
 
 pub fn main_control(app: &mut App, key: KeyEvent) {
     match key.code {
-        KeyCode::Char('q') => {}
         KeyCode::Up => {
             app.current_mode.select_previous();
         }

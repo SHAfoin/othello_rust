@@ -61,41 +61,7 @@ use ratatui::Terminal;
 use std::{error::Error, thread::current, time::Instant};
 use std::{io, time::Duration};
 
-pub fn start_game() {
-    let mut board = Board::new();
-    // let player1 = Human::new(Cell::Black);
-    // let player1 = AIAlphaBeta::new(
-    //     MAX_DEPTH,               // Depth of the search tree
-    //     HeuristicType::Absolute, // Heuristic type to use
-    //     Cell::Black,
-    //     None,
-    // );
-    // let player2 = Human::new(player1.get_color().get_opponent());
-    let player2 = AIAlphaBeta::new(
-        MAX_DEPTH,            // Depth of the search tree
-        HeuristicType::Mixte, // Heuristic type to use
-        Cell::White,
-        AIHeuristicMatrix::B,
-    );
-
-    let mut qplayer = QLearning::new(
-        64,                    // Maximum number of steps
-        HeuristicType::Global, // Heuristic type to use
-        AIHeuristicMatrix::A,  // Heuristic matrix to use
-        10000,                 // Number of epochs
-        Cell::Black,           // Color of the player
-    );
-
-    qplayer.import_q_table("foo.txt");
-}
-
 fn main() -> Result<(), Box<dyn Error>> {
-    println!("Welcome to Othello!\n");
-    println!("================\n");
-
-    // start_game();
-    // q.try_q_learning();
-
     enable_raw_mode()?;
     let mut stdout = io::stdout();
 
@@ -160,7 +126,13 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, app: &mut App) -> io::Result<
                 }
                 // Gestion selon l'écran actuel
                 match app.current_screen {
-                    CurrentScreen::Main => main_control(app, key),
+                    CurrentScreen::Main => match key.code {
+                        KeyCode::Char('q') => {
+                            return Ok(());
+                        }
+                        _ => main_control(app, key),
+                    },
+
                     CurrentScreen::Game => game_control(app, key, its_a_human_player),
                     CurrentScreen::Tutorial => tutorial_control(app, key),
                     CurrentScreen::Exit => exit_control(app, key),
