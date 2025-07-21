@@ -176,8 +176,16 @@ pub struct App {
     /// None when not configuring or running Q-Learning training.
     pub qlearning_parameters: Option<QLearning>,
 
+    /// Optional loading state for Q-Learning training progress.
+    ///     
+    /// Represents the current progress of Q-Learning training
+    /// session, typically a percentage or epoch count.
     pub qlearning_loading: Option<f64>,
 
+    /// Channel for receiving Q-Learning training progress updates.
+    ///     
+    /// Used to communicate between the Q-Learning training thread
+    /// and the main application for real-time updates.
     pub qlearning_channel: Option<std::sync::mpsc::Receiver<f64>>,
 }
 
