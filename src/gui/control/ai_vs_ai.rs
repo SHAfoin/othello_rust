@@ -75,7 +75,7 @@ pub fn ai_vs_ai_control(app: &mut App, key: KeyEvent) {
         KeyCode::Enter => match app.current_mode.selected() {
             Some(10) => {
                 // Start Game option
-                let mut game_ready = false;
+                let mut game_ready = true;
                 if app.player_1.as_ref().unwrap().get_ai_type().unwrap() == AIType::QLearning {
                     match app
                         .player_1
