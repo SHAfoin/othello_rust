@@ -58,27 +58,15 @@ mod gui;
 mod human;
 
 use crate::{
-    ai::{
-        ai_type::AIType,
-        algo::{alphabeta::AIAlphaBeta, minmax::AIMinMax, qlearning::QLearning},
-        heuristic::HeuristicType,
-        heuristic_matrix::AIHeuristicMatrix,
-    },
-    consts::{MAX_DEPTH, QLEARNING_MAX_EPOCHS},
-    game::{board::Board, cell::Cell, player::Player},
+    game::cell::Cell,
     gui::{
         app::{App, CurrentScreen},
         control::{
-            ai_vs_ai::{self, ai_vs_ai_control},
-            exit::exit_control,
-            game::game_control,
-            human_vs_ai::human_vs_ai_control,
-            main::main_control,
-            q_learning::{self, q_learning_parameters_control},
-            q_learning_loading::q_learning_loading_control,
-            tutorial::tutorial_control,
+            ai_vs_ai::ai_vs_ai_control, exit::exit_control, game::game_control,
+            human_vs_ai::human_vs_ai_control, main::main_control,
+            q_learning::q_learning_parameters_control,
+            q_learning_loading::q_learning_loading_control, tutorial::tutorial_control,
         },
-        screen::q_learning::q_learning_parameters_screen,
         ui::ui,
     },
 };

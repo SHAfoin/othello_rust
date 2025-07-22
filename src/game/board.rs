@@ -351,22 +351,6 @@ impl Board {
         }
     }
 
-    /// Returns a reference to the internal cell array.
-    ///
-    /// This method provides read-only access to the complete board state
-    /// for analysis, display, or serialization purposes.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// let board = Board::new();
-    /// let cells = board.get_cells();
-    /// assert_eq!(cells[3][3], Cell::White);
-    /// ```
-    pub fn get_cells(&self) -> &[[Cell; SIZE]; SIZE] {
-        &self.cells
-    }
-
     /// Returns a reference to the game move history.
     ///
     /// This method provides access to the complete history of moves

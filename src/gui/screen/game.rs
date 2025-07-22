@@ -454,7 +454,7 @@ fn widget_history(frame: &mut Frame, app: &App, area: Rect) {
             .get_history()
             .iter()
             .enumerate()
-            .map(|(index, action)| {
+            .map(|(_, action)| {
                 if action.coordinates.is_none() {
                     return ListItem::new(format!(
                         "Move {}: {} passed (no legal move).",

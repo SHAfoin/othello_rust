@@ -6,7 +6,7 @@
 
 use ratatui::crossterm::event::{KeyCode, KeyEvent};
 
-use crate::gui::app::{App, CurrentScreen};
+use crate::gui::app::App;
 
 /// Handles keyboard input for the exit confirmation screen.
 ///

@@ -153,22 +153,6 @@ impl QLearning {
         self.heuristic = heuristic;
     }
 
-    /// Returns a copy of the current heuristic matrix.
-    ///
-    /// The matrix is used by the heuristic function to evaluate board positions.
-    pub fn get_matrix(&self) -> AIHeuristicMatrix {
-        self.matrix.clone()
-    }
-
-    /// Updates the heuristic matrix used for evaluation.
-    ///
-    /// # Arguments
-    ///
-    /// * `matrix` - New heuristic matrix to use
-    pub fn set_matrix(&mut self, matrix: AIHeuristicMatrix) {
-        self.matrix = matrix;
-    }
-
     /// Returns a reference to the current Q-table.
     ///
     /// The Q-table maps board states (as strings) to action values,
