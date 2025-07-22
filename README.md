@@ -1,3 +1,9 @@
+<div align="center">
+
+![Othello](./othello_menu.png)
+
+</div>
+
 # Othello game in Rust
 
 ## Features
@@ -5,17 +11,14 @@
 - Ratatui for the GUI in terminal
 - Human vs Human / Human vs AI / AI vs AI
 - AI training with Q-learning/Alpha-Beta/Min-Max algorithm
-- Multi-thread training
+- Multi-threading
 - Test driven development
-
-## Author
-
-- SHA_foin [@SHA_foin](https://github.com/SHAfoin)
-- maxlem24 (for the initial project in Go) [@SHA_foin](https://github.com/SHAfoin)
+- Rustdocs documentation available
 
 ## Screenshots
 
-![App Screenshot](https://via.placeholder.com/468x300?text=App+Screenshot+Here)
+![Game AI VS AI](./screenshot_game.gif)
+![Game Human VS AI](./screenshot_training.gif)
 
 ## Installation
 
@@ -43,6 +46,11 @@ You can run the tests with :
 ```bash
   cargo test
 ```
+
+## Author
+
+- SHA_foin [@SHA_foin](https://github.com/SHAfoin)
+- maxlem24 (for the initial project in Go) [@SHA_foin](https://github.com/SHAfoin)
 
 ## TODO
 
