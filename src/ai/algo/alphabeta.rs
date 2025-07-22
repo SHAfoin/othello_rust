@@ -380,3 +380,106 @@ impl Player for AIAlphaBeta {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ai::heuristic::HeuristicType;
+
+    /// Helper function to create a default AIAlphaBeta instance for testing
+    fn create_test_ai() -> AIAlphaBeta {
+        AIAlphaBeta::new(
+            4,
+            HeuristicType::Absolute,
+            Cell::Black,
+            AIHeuristicMatrix::A,
+        )
+    }
+
+    #[test]
+    fn test_new_ai_creation() {
+        let ai = create_test_ai();
+        assert_eq!(ai.get_depth(), 4);
+        assert_eq!(ai.get_color(), Cell::Black);
+        assert_eq!(ai.get_heuristic(), HeuristicType::Absolute);
+    }
+
+    #[test]
+    fn test_constructor_with_different_parameters() {
+        // Test with various parameter combinations
+        let ai1 = AIAlphaBeta::new(
+            1,
+            HeuristicType::Absolute,
+            Cell::White,
+            AIHeuristicMatrix::B,
+        );
+        assert_eq!(ai1.get_depth(), 1);
+        assert_eq!(ai1.get_color(), Cell::White);
+        assert_eq!(ai1.get_heuristic(), HeuristicType::Absolute);
+        assert!(matches!(ai1.get_heuristic_matrix(), AIHeuristicMatrix::B));
+
+        let ai2 = AIAlphaBeta::new(
+            10,
+            HeuristicType::Mobility,
+            Cell::Black,
+            AIHeuristicMatrix::A,
+        );
+        assert_eq!(ai2.get_depth(), 10);
+        assert_eq!(ai2.get_color(), Cell::Black);
+        assert_eq!(ai2.get_heuristic(), HeuristicType::Mobility);
+        assert!(matches!(ai2.get_heuristic_matrix(), AIHeuristicMatrix::A));
+    }
+
+    #[test]
+    fn test_depth_edge_cases() {
+        let mut ai = create_test_ai();
+
+        // Test setting depth to 0
+        ai.set_depth(0);
+        assert_eq!(ai.get_depth(), 0);
+
+        // Test setting very high depth
+        ai.set_depth(1000);
+        assert_eq!(ai.get_depth(), 1000);
+    }
+
+    #[test]
+    fn test_all_heuristic_types() {
+        let mut ai = create_test_ai();
+
+        // Test all available heuristic types
+        ai.set_heuristic(HeuristicType::Absolute);
+        assert_eq!(ai.get_heuristic(), HeuristicType::Absolute);
+
+        ai.set_heuristic(HeuristicType::Matrix);
+        assert_eq!(ai.get_heuristic(), HeuristicType::Matrix);
+
+        ai.set_heuristic(HeuristicType::Mobility);
+        assert_eq!(ai.get_heuristic(), HeuristicType::Mobility);
+
+        ai.set_heuristic(HeuristicType::Mixte);
+        assert_eq!(ai.get_heuristic(), HeuristicType::Mixte);
+
+        ai.set_heuristic(HeuristicType::Global);
+        assert_eq!(ai.get_heuristic(), HeuristicType::Global);
+    }
+
+    #[test]
+    fn test_multiple_property_changes() {
+        let mut ai = create_test_ai();
+
+        // Change multiple properties and verify they persist
+        ai.set_depth(7);
+        ai.set_heuristic(HeuristicType::Matrix);
+        ai.set_heuristic_matrix(AIHeuristicMatrix::B);
+
+        assert_eq!(ai.get_depth(), 7);
+        assert_eq!(ai.get_heuristic(), HeuristicType::Matrix);
+        assert!(matches!(ai.get_heuristic_matrix(), AIHeuristicMatrix::B));
+
+        // Original properties should remain unchanged
+        assert_eq!(ai.get_color(), Cell::Black);
+        assert!(!ai.is_human());
+        assert_eq!(ai.get_ai_type(), Some(AIType::AlphaBeta));
+    }
+}

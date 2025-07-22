@@ -1129,4 +1129,246 @@ mod tests {
         // White should have no legal moves
         assert_eq!(board.has_legal_moves(Cell::White), None);
     }
+
+    #[test]
+    fn test_new_board_initial_state() {
+        let board = Board::new();
+
+        // Test center setup
+        assert_eq!(board.get_cell(3, 3), Ok(Cell::White));
+        assert_eq!(board.get_cell(3, 4), Ok(Cell::Black));
+        assert_eq!(board.get_cell(4, 3), Ok(Cell::Black));
+        assert_eq!(board.get_cell(4, 4), Ok(Cell::White));
+
+        // Test corners are empty
+        assert_eq!(board.get_cell(0, 0), Ok(Cell::Empty));
+        assert_eq!(board.get_cell(0, 7), Ok(Cell::Empty));
+        assert_eq!(board.get_cell(7, 0), Ok(Cell::Empty));
+        assert_eq!(board.get_cell(7, 7), Ok(Cell::Empty));
+
+        assert_eq!(board.get_turn_number(), 1);
+        assert_eq!(board.get_player_turn(), Cell::Black);
+    }
+
+    #[test]
+    fn test_coordinates_conversion_edge_cases() {
+        // Test boundary coordinates
+        assert_eq!(Board::input_to_coordinates("0A"), Some((0, 0)));
+        assert_eq!(Board::input_to_coordinates("7H"), Some((7, 7)));
+        assert_eq!(Board::coordinates_to_input(0, 0), "0A");
+        assert_eq!(Board::coordinates_to_input(7, 7), "7H");
+
+        // Test invalid coordinates (out of bounds)
+        assert_eq!(Board::input_to_coordinates("8A"), None);
+        assert_eq!(Board::input_to_coordinates("0I"), None);
+        assert_eq!(Board::coordinates_to_input(8, 0), "");
+        assert_eq!(Board::coordinates_to_input(0, 8), "");
+
+        // Test malformed input
+        assert_eq!(Board::input_to_coordinates(""), None);
+        assert_eq!(Board::input_to_coordinates("3DD"), None);
+
+        // Test non-digit character for row
+        assert_eq!(Board::input_to_coordinates("XA"), None);
+    }
+
+    #[test]
+    fn test_game_over_detection() {
+        let mut board = Board::new();
+
+        // Game should not be over at start
+        assert!(!board.check_game_over());
+        assert!(!board.is_game_over());
+
+        // Fill most of the board to create an end game scenario
+        for row in 0..SIZE {
+            for col in 0..SIZE {
+                if board.get_cell(row, col) == Ok(Cell::Empty) {
+                    // Skip center area to avoid breaking existing setup
+                    if row < 2 || row > 5 || col < 2 || col > 5 {
+                        board.set_cell(row, col, Cell::Black);
+                    }
+                }
+            }
+        }
+
+        // Update legal moves count to reflect filled board
+        board.set_nb_legal_moves(Cell::Black, None).unwrap();
+        board.set_nb_legal_moves(Cell::White, None).unwrap();
+
+        assert!(board.check_game_over());
+        assert!(board.is_game_over());
+    }
+
+    #[test]
+    fn test_move_validation_edge_cases() {
+        let board = Board::new();
+
+        // Test out of bounds moves
+        assert!(board.can_play(8, 0, Cell::Black).is_err());
+        assert!(board.can_play(0, 8, Cell::Black).is_err());
+        assert!(board.can_play(SIZE, SIZE, Cell::Black).is_err());
+
+        // Test occupied cells
+        assert!(board.can_play(3, 3, Cell::Black).is_err());
+        assert!(board.can_play(3, 4, Cell::Black).is_err());
+        assert!(board.can_play(4, 3, Cell::Black).is_err());
+        assert!(board.can_play(4, 4, Cell::Black).is_err());
+
+        // Test invalid colors
+        assert!(board.can_play(2, 3, Cell::Empty).is_err());
+    }
+
+    #[test]
+    fn test_disc_flipping_behavior() {
+        let mut board = Board::new();
+
+        // Test a simple valid move that flips one disc
+        let result = board.try_play_move(2, 3, Cell::Black);
+        assert!(result.is_ok());
+
+        // Verify the disc was placed
+        assert_eq!(board.get_cell(2, 3), Ok(Cell::Black));
+
+        // Verify the disc below was flipped from White to Black
+        assert_eq!(board.get_cell(3, 3), Ok(Cell::Black));
+
+        // Check that the move returned the correct count (1 new disc + 1 flipped)
+        assert_eq!(result.unwrap(), 2);
+    }
+
+    #[test]
+    fn test_winner_determination_edge_cases() {
+        let mut board = Board::new();
+
+        // Initially should be a tie
+        assert_eq!(board.get_winner(), None);
+
+        // Make black have more discs
+        board.nb_discs[0] = 32; // Black
+        board.nb_discs[1] = 31; // White
+        assert_eq!(board.get_winner(), Some(Cell::Black));
+
+        // Make white have more discs
+        board.nb_discs[0] = 30; // Black
+        board.nb_discs[1] = 34; // White
+        assert_eq!(board.get_winner(), Some(Cell::White));
+
+        // Tie game
+        board.nb_discs[0] = 32; // Black
+        board.nb_discs[1] = 32; // White
+        assert_eq!(board.get_winner(), None);
+    }
+
+    #[test]
+    fn test_hash_generation() {
+        let board1 = Board::new();
+        let board2 = Board::new();
+
+        // Same board state should produce same hash
+        assert_eq!(board1.to_hash(), board2.to_hash());
+
+        // Hash should be 65 characters (1 for turn + 64 for cells)
+        assert_eq!(board1.to_hash().len(), 65);
+
+        // Hash should start with 'B' for Black's turn
+        assert!(board1.to_hash().starts_with('B'));
+
+        // Make a move and verify hash changes
+        let mut board3 = Board::new();
+        board3.try_play_move(2, 3, Cell::Black).unwrap();
+        assert_ne!(board1.to_hash(), board3.to_hash());
+    }
+
+    #[test]
+    fn test_legal_moves_boundary_conditions() {
+        let board = Board::new();
+
+        // Test that initial legal moves are correct
+        let black_moves = board.has_legal_moves(Cell::Black).unwrap();
+        let white_moves = board.has_legal_moves(Cell::White).unwrap();
+
+        // Should have exactly 4 legal moves each at start
+        assert_eq!(black_moves.len(), 4);
+        assert_eq!(white_moves.len(), 4);
+
+        // Verify specific starting moves for black
+        assert!(black_moves.contains(&(2, 3)));
+        assert!(black_moves.contains(&(3, 2)));
+        assert!(black_moves.contains(&(4, 5)));
+        assert!(black_moves.contains(&(5, 4)));
+    }
+
+    #[test]
+    fn test_recursive_move_validation_edge_cases() {
+        let board = Board::new();
+
+        // Test edge of board
+        assert!(!board.is_move_valid_recursive(0, 0, Cell::Black, 1, (-1, -1)));
+        assert!(!board.is_move_valid_recursive(7, 7, Cell::Black, 1, (1, 1)));
+
+        // Test same color adjacent (should be invalid)
+        assert!(!board.is_move_valid_recursive(3, 4, Cell::Black, 1, (1, 0)));
+
+        // Test valid direction from starting position
+        assert!(board.is_move_valid_recursive(2, 3, Cell::Black, 1, (1, 0)));
+    }
+
+    #[test]
+    fn test_empty_board_scenario() {
+        let mut board = Board::new();
+
+        // Clear the board
+        for row in 0..SIZE {
+            for col in 0..SIZE {
+                board.set_cell(row, col, Cell::Empty);
+            }
+        }
+
+        // No legal moves should exist on empty board
+        assert_eq!(board.has_legal_moves(Cell::Black), None);
+        assert_eq!(board.has_legal_moves(Cell::White), None);
+    }
+
+    #[test]
+    fn test_single_disc_scenario() {
+        let mut board = Board::new();
+
+        // Clear board and place single black disc
+        for row in 0..SIZE {
+            for col in 0..SIZE {
+                board.set_cell(row, col, Cell::Empty);
+            }
+        }
+        board.set_cell(3, 3, Cell::Black);
+
+        // No legal moves should exist with only one disc
+        assert_eq!(board.has_legal_moves(Cell::Black), None);
+        assert_eq!(board.has_legal_moves(Cell::White), None);
+    }
+
+    #[test]
+    fn test_history_tracking() {
+        let board = Board::new();
+
+        // Initially empty history
+        assert_eq!(board.get_history().len(), 0);
+
+        // Add a move to history
+        let mut board_with_history = board;
+        let action = HistoryAction {
+            coordinates: Some("2D".to_string()),
+            gained_discs: Some(1),
+            color: Cell::Black,
+            player_turn: Cell::Black,
+            move_number: 1,
+        };
+        board_with_history.add_to_history(action);
+
+        assert_eq!(board_with_history.get_history().len(), 1);
+        assert_eq!(
+            board_with_history.get_history()[0].coordinates,
+            Some("2D".to_string())
+        );
+    }
 }

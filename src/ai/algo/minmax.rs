@@ -420,3 +420,149 @@ impl Player for AIMinMax {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ai::heuristic::HeuristicType;
+    use crate::ai::heuristic_matrix::AIHeuristicMatrix;
+    use crate::game::cell::Cell;
+
+    /// Helper function to create a basic AIMinMax instance for testing
+    fn create_test_ai() -> AIMinMax {
+        AIMinMax::new(
+            3,
+            HeuristicType::Absolute,
+            Cell::Black,
+            AIHeuristicMatrix::A,
+            false,
+        )
+    }
+
+    /// Helper function to create a threaded AIMinMax instance for testing
+    fn create_threaded_ai() -> AIMinMax {
+        AIMinMax::new(
+            3,
+            HeuristicType::Matrix,
+            Cell::White,
+            AIHeuristicMatrix::B,
+            true,
+        )
+    }
+
+    #[test]
+    fn test_new_creates_ai_with_correct_parameters() {
+        let depth = 5;
+        let heuristic = HeuristicType::Global;
+        let color = Cell::Black;
+        let matrix = AIHeuristicMatrix::A;
+        let threading = true;
+
+        let ai = AIMinMax::new(depth, heuristic.clone(), color, matrix.clone(), threading);
+
+        assert_eq!(ai.depth, depth);
+        assert_eq!(ai.color, color);
+        assert_eq!(ai.double_threading, threading);
+        // Note: We don't test heuristic and matrix equality as they might not implement PartialEq
+    }
+
+    #[test]
+    fn test_new_with_zero_depth() {
+        let ai = AIMinMax::new(
+            0,
+            HeuristicType::Mobility,
+            Cell::White,
+            AIHeuristicMatrix::B,
+            false,
+        );
+
+        assert_eq!(ai.depth, 0);
+        assert_eq!(ai.color, Cell::White);
+        assert!(!ai.double_threading);
+    }
+
+    #[test]
+    fn test_new_with_maximum_depth() {
+        let ai = AIMinMax::new(
+            usize::MAX,
+            HeuristicType::Mixte,
+            Cell::Black,
+            AIHeuristicMatrix::A,
+            true,
+        );
+
+        assert_eq!(ai.depth, usize::MAX);
+        assert_eq!(ai.color, Cell::Black);
+        assert!(ai.double_threading);
+    }
+
+    #[test]
+    fn test_get_color_returns_correct_color() {
+        let black_ai = create_test_ai();
+        assert_eq!(black_ai.get_color(), Cell::Black);
+
+        let white_ai = create_threaded_ai();
+        assert_eq!(white_ai.get_color(), Cell::White);
+    }
+
+    #[test]
+    fn test_is_human_always_returns_false() {
+        let ai = create_test_ai();
+        assert!(!ai.is_human());
+
+        let threaded_ai = create_threaded_ai();
+        assert!(!threaded_ai.is_human());
+    }
+
+    #[test]
+    fn test_get_ai_type_returns_minmax() {
+        let ai = create_test_ai();
+        assert_eq!(ai.get_ai_type(), Some(AIType::MinMax));
+    }
+
+    #[test]
+    fn test_ai_with_different_colors() {
+        let black_ai = AIMinMax::new(
+            4,
+            HeuristicType::Matrix,
+            Cell::Black,
+            AIHeuristicMatrix::A,
+            false,
+        );
+
+        let white_ai = AIMinMax::new(
+            4,
+            HeuristicType::Matrix,
+            Cell::White,
+            AIHeuristicMatrix::A,
+            false,
+        );
+
+        assert_eq!(black_ai.get_color(), Cell::Black);
+        assert_eq!(white_ai.get_color(), Cell::White);
+        assert_ne!(black_ai.get_color(), white_ai.get_color());
+    }
+
+    #[test]
+    fn test_edge_case_depth_values() {
+        // Test with depth 1 (minimum meaningful depth)
+        let ai_depth_1 = AIMinMax::new(
+            1,
+            HeuristicType::Absolute,
+            Cell::Black,
+            AIHeuristicMatrix::A,
+            false,
+        );
+        assert_eq!(ai_depth_1.get_depth(), 1);
+
+        // Test with very large depth
+        let ai_large_depth = AIMinMax::new(
+            1000,
+            HeuristicType::Mobility,
+            Cell::White,
+            AIHeuristicMatrix::B,
+            true,
+        );
+        assert_eq!(ai_large_depth.get_depth(), 1000);
+    }
+}

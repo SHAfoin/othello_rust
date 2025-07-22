@@ -558,3 +558,240 @@ impl Player for QLearning {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ai::heuristic::HeuristicType;
+    use crate::ai::heuristic_matrix::AIHeuristicMatrix;
+    use crate::game::cell::Cell;
+    use std::sync::mpsc;
+
+    /// Helper function to create a basic QLearning instance for testing
+    fn create_test_ai() -> QLearning {
+        QLearning::new(
+            100,
+            HeuristicType::Absolute,
+            AIHeuristicMatrix::A,
+            10,
+            Cell::Black,
+        )
+    }
+
+    /// Helper function to create a QLearning instance with different parameters
+    fn create_alt_ai() -> QLearning {
+        QLearning::new(
+            500,
+            HeuristicType::Matrix,
+            AIHeuristicMatrix::B,
+            50,
+            Cell::White,
+        )
+    }
+
+    #[test]
+    fn test_new_creates_ai_with_correct_parameters() {
+        let max_step = 1000;
+        let heuristic = HeuristicType::Global;
+        let matrix = AIHeuristicMatrix::A;
+        let epoch = 500;
+        let color = Cell::Black;
+
+        let ai = QLearning::new(max_step, heuristic, matrix, epoch, color);
+
+        assert_eq!(ai.max_step, max_step);
+        assert_eq!(ai.epoch, epoch);
+        assert_eq!(ai.color, color);
+        assert_eq!(ai.epsilon, EPSILON);
+        assert!(ai.q_table.is_empty());
+    }
+
+    #[test]
+    fn test_new_with_zero_max_step() {
+        let ai = QLearning::new(
+            0,
+            HeuristicType::Mobility,
+            AIHeuristicMatrix::B,
+            100,
+            Cell::White,
+        );
+
+        assert_eq!(ai.max_step, 0);
+        assert_eq!(ai.epoch, 100);
+        assert_eq!(ai.color, Cell::White);
+    }
+
+    #[test]
+    fn test_new_with_zero_epochs() {
+        let ai = QLearning::new(
+            1000,
+            HeuristicType::Mixte,
+            AIHeuristicMatrix::A,
+            0,
+            Cell::Black,
+        );
+
+        assert_eq!(ai.max_step, 1000);
+        assert_eq!(ai.epoch, 0);
+        assert_eq!(ai.color, Cell::Black);
+    }
+
+    #[test]
+    fn test_new_with_maximum_values() {
+        let ai = QLearning::new(
+            usize::MAX,
+            HeuristicType::Global,
+            AIHeuristicMatrix::B,
+            usize::MAX,
+            Cell::White,
+        );
+
+        assert_eq!(ai.max_step, usize::MAX);
+        assert_eq!(ai.epoch, usize::MAX);
+        assert_eq!(ai.color, Cell::White);
+    }
+
+    #[test]
+    fn test_is_human_always_returns_false() {
+        let ai = create_test_ai();
+        assert!(!ai.is_human());
+
+        let alt_ai = create_alt_ai();
+        assert!(!alt_ai.is_human());
+    }
+
+    #[test]
+    fn test_get_ai_type_returns_qlearning() {
+        let ai = create_test_ai();
+        assert_eq!(ai.get_ai_type(), Some(AIType::QLearning));
+    }
+
+    #[test]
+    fn test_empty_q_table_initially() {
+        let ai = create_test_ai();
+        assert!(ai.get_q_table().is_empty());
+        assert_eq!(ai.get_q_table().len(), 0);
+    }
+
+    #[test]
+    fn test_set_q_table_multiple_actions_same_state() {
+        let mut ai = create_test_ai();
+
+        let state = "test_state".to_string();
+        let action1 = ("a1".to_string(), 100);
+        let action2 = ("b2".to_string(), 200);
+
+        ai.set_q_table(state.clone(), action1.clone());
+        ai.set_q_table(state.clone(), action2.clone());
+
+        let state_actions = ai.get_q_table().get(&state).unwrap();
+        assert_eq!(state_actions.len(), 2);
+        assert_eq!(state_actions.get(&action1.0), Some(&action1.1));
+        assert_eq!(state_actions.get(&action2.0), Some(&action2.1));
+    }
+
+    #[test]
+    fn test_set_q_table_overwrites_existing_action() {
+        let mut ai = create_test_ai();
+
+        let state = "test_state".to_string();
+        let action_key = "a1".to_string();
+
+        ai.set_q_table(state.clone(), (action_key.clone(), 100));
+        ai.set_q_table(state.clone(), (action_key.clone(), 200));
+
+        let state_actions = ai.get_q_table().get(&state).unwrap();
+        assert_eq!(state_actions.len(), 1);
+        assert_eq!(state_actions.get(&action_key), Some(&200));
+    }
+
+    #[test]
+    fn test_edge_case_parameters() {
+        // Test with minimal parameters
+        let minimal_ai = QLearning::new(
+            1,
+            HeuristicType::Absolute,
+            AIHeuristicMatrix::A,
+            1,
+            Cell::Black,
+        );
+        assert_eq!(minimal_ai.get_max_step(), 1);
+        assert_eq!(minimal_ai.get_epochs(), 1);
+
+        // Test with large parameters
+        let large_ai = QLearning::new(
+            10000,
+            HeuristicType::Global,
+            AIHeuristicMatrix::B,
+            5000,
+            Cell::White,
+        );
+        assert_eq!(large_ai.get_max_step(), 10000);
+        assert_eq!(large_ai.get_epochs(), 5000);
+    }
+
+    #[test]
+    fn test_import_q_table_file_nonexistent_file() {
+        let mut ai = create_test_ai();
+        let result = ai.import_q_table_file("nonexistent_file.json");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("Failed to import Q-table"));
+    }
+
+    #[test]
+    fn test_export_q_table_creates_file() {
+        let mut ai = create_test_ai();
+
+        // Add some data to the Q-table
+        ai.set_q_table("state1".to_string(), ("action1".to_string(), 100));
+        ai.set_q_table("state2".to_string(), ("action2".to_string(), 200));
+
+        let test_file = "test_q_table.json";
+        ai.export_q_table(test_file);
+
+        // Verify file was created by trying to read it
+        let file_exists = std::fs::metadata(test_file).is_ok();
+        assert!(file_exists);
+
+        // Clean up
+        std::fs::remove_file(test_file).ok();
+    }
+
+    #[test]
+    fn test_q_learning_with_zero_max_step() {
+        let mut ai = QLearning::new(
+            0,
+            HeuristicType::Absolute,
+            AIHeuristicMatrix::A,
+            1,
+            Cell::Black,
+        );
+
+        let (total_reward, game_over) = ai.q_learning();
+
+        // With 0 max steps, the game should not progress
+        assert_eq!(total_reward, 0);
+        assert!(!game_over); // Game doesn't have time to end
+    }
+
+    #[test]
+    fn test_try_q_learning_with_zero_epochs() {
+        let mut ai = QLearning::new(
+            100,
+            HeuristicType::Absolute,
+            AIHeuristicMatrix::A,
+            0,
+            Cell::Black,
+        );
+
+        let (tx, rx) = mpsc::channel();
+        ai.try_q_learning(tx);
+
+        // With 0 epochs, no training should occur
+        // The Q-table should remain empty
+        assert!(ai.get_q_table().is_empty());
+
+        // Should not receive any progress updates
+        assert!(rx.try_recv().is_err());
+    }
+}
