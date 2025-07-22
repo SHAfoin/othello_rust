@@ -46,4 +46,7 @@ You can run the tests with :
 
 ## TODO
 
-- [ ] Add Cargo docs
+- [x] Add Cargo docs
+- [x] Add more tests
+- [x] Screenshots & Gif of the program
+- [x] Add timer
